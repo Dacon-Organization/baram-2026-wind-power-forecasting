@@ -21,9 +21,13 @@
 | 문서 | 상태 | 설명 |
 |------|------|------|
 | [01-strategy-prd.md](groundwork/01-strategy-prd.md) | 작성 완료 | 문제 정의, 데이터 팩트 레저, 평가/규정, 전략 요구사항 |
+| [02-perplexity-research-synthesis.md](groundwork/02-perplexity-research-synthesis.md) | 작성 완료 | Perplexity 1회차 결과를 공식/외부/충돌/재검증/추론으로 재분류 |
 | [02-data-modeling-spec.md](design/02-data-modeling-spec.md) | 작성 완료 | 스키마 검증, cutoff, 피처, validation, metric, Perplexity 운영 설계 |
 
 ## 다음 문서 후보
 
-1. `design/03-operations-master-plan.md`
+1. Perplexity 2차 질문 결과 보강
+   공식 평가 산식, 외부 데이터 규칙, Chronos-2, LDAPS/GFS 1차 출처 재검증
+
+2. `design/03-operations-master-plan.md`
    제출 운영, 실험 추적, 산출물 검증, 2차 발표 준비 계획

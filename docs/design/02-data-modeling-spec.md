@@ -3,6 +3,7 @@
 > 작성일: 2026-06-28 KST
 > 상태: 공식 데이터 공개 전 실행 설계
 > 선행 문서: `docs/groundwork/01-strategy-prd.md`
+> 보강 문서: `docs/groundwork/02-perplexity-research-synthesis.md`
 > 다음 문서: `docs/design/03-operations-master-plan.md`
 
 ---
@@ -10,7 +11,8 @@
 ## 0. 목적과 범위
 
 이 문서는 공식 데이터가 공개되기 전에도 준비할 수 있는 데이터 검증, 시점 검증,
-피처 설계, validation split, baseline metric 재현, Perplexity 리서치 운영 방식을 정의한다.
+피처 설계, validation split, baseline metric 재현, Perplexity 리서치 운영 방식과
+Perplexity 리서치 결과 반영 기준을 정의한다.
 
 핵심 원칙은 세 가지다.
 
@@ -23,6 +25,10 @@
 3. **Perplexity는 근거 확장 장치로 쓰고, 대회 사실 확정 장치로 쓰지 않는다.**
    Perplexity 결과는 모델링 아이디어, 논문/공식문서 탐색, 질문 생성에 쓰되,
    워크숍/공식 데이터와 충돌하면 공식 데이터를 우선한다.
+
+Perplexity 1회차 결과의 상세 분류는
+[Perplexity 리서치 종합](../groundwork/02-perplexity-research-synthesis.md)에 둔다.
+이 문서에는 실행 설계에 필요한 결론만 반영한다.
 
 ---
 
@@ -52,7 +58,7 @@
 | 발전량 단위 | MW, MWh, kW, kWh 혼동 가능 | sample submission과 label 통계 확인 |
 | timestamp timezone | UTC/KST 혼용 가능 | min/max, 간격, base/valid time 관계 확인 |
 | LDAPS/GFS 리드타임 | `h016~h039` 판독은 공식 파일로 확인 필요 | base time, valid time, lead hour 재계산 |
-| 정산금 지표 표기 | FICR/SCR/정산금획득률 표기 혼재 | 공식 평가 페이지와 metric 노트북으로 재현 |
+| 정산금 지표 | Dacon 공식 평가 페이지에서 `정산금획득률` 정의 확인. Public/Private 세부 정산 기준은 추후 공개 | 공식 평가 페이지와 데이터 공개 후 metric 노트북으로 재현 |
 | valid-hour 조건 | 실제 구현 단위에 따라 달라질 수 있음 | label 단위 기준 10% threshold 확인 |
 | Group 3 2022 label 없음 | 파일 구성상 다르게 제공될 가능성 | group-date availability matrix 작성 |
 
@@ -289,6 +295,22 @@ target_time_kst가 prediction_cutoff 이후인 것은 당연하다.
 | SCADA 파생 | power curve, 정상/비정상 운전 label, curtailment 후보 | train 분석용 |
 | 정산 최적화 | capacity-normalized error risk, threshold-aware calibration | metric 확정 후 |
 
+Perplexity 1회차 결과는 아래처럼 상태를 낮춰 반영한다.
+데이터 관련 항목은 반드시 `확정 / 외부 리서치 / 충돌 / 공식 공개 후 재검증 / 추론` 중 하나로 표시한다.
+
+| 피처 후보 | 상태 | 적용 조건 | 1회차 판단 |
+|-----------|------|-----------|------------|
+| 풍향 `sin/cos` | 외부 리서치 | 풍향 또는 u/v 성분 제공 | P0 후보. 누수 위험 낮음 |
+| u/v 기반 풍속·풍향 | 외부 리서치 | u/v convention 확인 | P0 후보 |
+| `wind_speed^2`, `wind_speed^3` | 외부 리서치 | 풍속 컬럼 제공 | power curve 비선형 보강 |
+| 공기밀도, wind power density | 외부 리서치 | 온도·기압·습도 단위 확인 | P1 후보 |
+| grid mean/std/max/min | 외부 리서치 | 격자별 변수가 제공됨 | P0/P1 후보 |
+| nearest/bilinear/IDW | 공식 공개 후 재검증 | grid 좌표와 단지/그룹 좌표 필요 | 좌표 공개 후 선택 |
+| `issue_time`, `valid_time`, `lead_hour` | 공식 공개 후 재검증 | 예보 메타데이터 제공 | cutoff validator와 함께 P0 |
+| multi-run forecast spread | 공식 공개 후 재검증 | 동일 target에 복수 run 존재 | 미래 issue time 누수 방지 필요 |
+| hub-height extrapolation | 추론 | 10m/50m/80m/100m 바람과 허브 높이 확인 | 임의 alpha 금지 |
+| wake/terrain/RIX | 충돌/공식 공개 후 재검증 | 터빈 배치, DEM, 외부 데이터 규칙 필요 | 공식 데이터 전 사용 보류 |
+
 ### 5.2 시간 피처
 
 | 피처 | 설명 | 누수 위험 |
@@ -403,14 +425,18 @@ LDAPS 16개, GFS 9개 격자 제공은 워크숍 근거다.
 
 ### 6.3 Public 과적합 방지
 
-Public/Private가 2025년 내부 40:60으로 나뉘며 계절성을 균등 반영한다는 워크숍 설명이 있었다.
-따라서 Public 점수에 맞춰 특정 계절/월 bias를 과하게 조정하지 않는다.
+워크숍 판독으로 Public/Private가 2025년 내부에서 계절성을 고려해 분할된다는 설명이 있었지만,
+Dacon 공식 평가 페이지는 Public/Private 정산 기준을 추후 공개 대상으로 둔다.
+따라서 40:60 같은 수치는 공식 사실로 쓰지 않고, Public 점수에 맞춰 특정 계절/월 bias를
+과하게 조정하지 않는 운영 원칙만 채택한다.
 
 운영 원칙:
 
 - local validation 평균이 나빠지는 Public 개선은 보류
 - Public 제출은 하루 5회 제한을 실험 설계에 반영
 - 제출 전후 실험 조건을 기록하고, 최고 Public 파일 자동선택 여부를 별도 확인
+- CV 기반 최적 모델과 Public LB 최고 모델이 다르면, 차이를 리더보드 과적합 신호로 기록
+- lag/rolling feature를 쓰는 실험은 forecast horizon보다 짧은 lag를 금지하고, 필요하면 fold 경계에 embargo gap을 둔다
 
 ---
 
@@ -442,7 +468,22 @@ score_1_nmae = 1 - mean(nmae_g for g in groups)
 
 ### 7.3 정산금획득률 계열 지표
 
-워크숍 판독 기준:
+Dacon 공식 평가 페이지에서 확정된 것은 정산금획득률의 큰 정의다.
+
+```text
+settlement_rate = captured_settlement_amount / theoretical_max_settlement_amount * 100
+```
+
+Public/Private Score의 세부 정산 기준은 공식 페이지에서 추후 공개 대상으로 남아 있다.
+따라서 local simulator는 아래처럼 복수 시나리오를 지원하도록 설계한다.
+
+| 시나리오 | 상태 | 임계값/단가 | 사용 목적 |
+|----------|------|-------------|-----------|
+| 워크숍 기준 | 워크숍 근거/추론 | 6% 이하 4원, 6~8% 3원, 8% 초과 0원 | 기존 워크숍 판독 재현 |
+| 최신 KPX 후보 | 외부 리서치/충돌 | 4%/6% 계열 강화 기준 | 제도 변화 민감도 분석 |
+| 공식 BARAM 기준 | 공식 공개 후 재검증 | 데이터/평가 탭 공개 후 확정 | 최종 metric 구현 |
+
+워크숍 기준 simulator 초안:
 
 ```text
 hourly_error_rate_g = abs(y_true_g - y_pred_g) / capacity_g
@@ -463,7 +504,8 @@ ficr_or_scr = mean(scr_g for g in groups)
 
 - 발전량이 MW 평균인지 MWh 에너지인지에 따라 `y_true_energy_g` 계산이 달라진다.
 - 공식 산식이 실제 발전량이 아니라 설비용량/시간 기준으로 최대 정산금을 계산할 수 있다.
-- `FICR`, `SCR`, `정산금획득률` 표기는 공식 평가 페이지 기준으로 통일한다.
+- valid-hour 10% 조건이 BARAM 공식 산식에 그대로 적용되는지 확인해야 한다.
+- `FICR`, `SCR` 같은 내부 표기는 문서에서는 `정산금획득률`로 통일한다.
 
 ### 7.4 Total Score
 
@@ -473,7 +515,7 @@ ficr_or_scr = mean(scr_g for g in groups)
 total_score = 0.5 * score_1_nmae + 0.5 * ficr_or_scr
 ```
 
-공식 평가 페이지 공개 후 동일하게 재현되는지 확인한다.
+공식 세부 정산 기준 공개 후 동일하게 재현되는지 확인한다.
 
 ---
 
@@ -500,21 +542,26 @@ total_score = 0.5 * score_1_nmae + 0.5 * ficr_or_scr
 | quantile model | 불확실성/보정 활용 | metric과 직접 연결 필요 |
 | ensemble | Public/Private 안정성 | 실험 관리 복잡 |
 
-### 8.3 P2: Time-series foundation 후보
+### 8.3 P1/P2: Time-series foundation 후보
 
 Chronos 계열은 워크숍 데모와 외부 공식 자료 기준 후보로 남긴다.
 단, 대회 규정상 로컬에서 공개 가중치를 직접 로드해야 하며 원격 inference API는 사용할 수 없다.
 
-| 후보 | 사용 목적 | 확인 필요 |
-|------|-----------|-----------|
-| `chronos-bolt-small` | 빠른 zero-shot/데모 baseline | 공개일, 라이선스, CPU 가능성 |
-| `chronos-bolt-base` | 성능/속도 균형 후보 | 공개일, 로컬 실행 환경 |
-| `chronos-2` | 외생변수/다변량 지원 후보 | 공개일, 입력 포맷, 리소스 |
-| AutoGluon-TimeSeries + Chronos | 빠른 비교 실험 | 의존성, 재현성, GPU 필요성 |
+| 후보 | 우선순위 | 사용 목적 | 확인 필요 |
+|------|----------|-----------|-----------|
+| `chronos-2` | P1 | NWP known future covariate 지원 가능성 검증 | 공식 가중치 공개일, 라이선스, 로컬 실행, 입력 포맷 |
+| `chronos-bolt-small` | P2 | 빠른 zero-shot/데모 baseline | 공개일, 라이선스, CPU 가능성 |
+| `chronos-bolt-base` | P2 | 앙상블 다양성 확보 | prediction length, 로컬 실행 환경 |
+| AutoGluon-TimeSeries + Chronos | P2 | 빠른 비교 실험 | `num_val_windows`, stacking leakage, seed 재현성 |
 
 Foundation model은 처음부터 주력으로 두지 않는다.
 이 대회는 기상예보 다변량 피처와 물리/정산 최적화가 중요하므로,
 tabular NWP post-processing 모델을 기준선으로 놓고 foundation model은 앙상블 후보로 평가한다.
+
+Perplexity 1회차 보고서는 Chronos-2를 1순위로 제안했지만,
+현재 설계에서는 `LightGBM/CatBoost tabular NWP baseline → Chronos-2 covariate 실험 → 앙상블`
+순서를 유지한다. `chronos_wind_power_demo.ipynb`는 synthetic 10분 데이터 zero-shot 예시이므로,
+실제 대회 적합성의 증거가 아니라 사용법 참고로만 둔다.
 
 ### 8.4 Calibration
 
@@ -908,9 +955,82 @@ Perplexity 결과를 Codex 작업으로 가져올 때는 아래 형식으로 붙
 
 ---
 
-## 10. 실험 우선순위
+## 10. Perplexity 리서치 결과 반영 1회차
 
-### 10.1 공개 전 준비 가능
+상세 분류는 [Perplexity 리서치 종합](../groundwork/02-perplexity-research-synthesis.md)을 기준으로 한다.
+
+**Perplexity 결과는 대회 공식 사실이 아니며, 공식 데이터/규칙과 충돌 시 공식 기준 우선**이다.
+이번 1회차 반영은 운영 마스터플랜이나 코드 구현으로 넘어가지 않고,
+데이터·모델링 설계서의 후보와 재검증 질문을 보강하는 범위로 제한한다.
+
+### 10.1 공식 사실로 반영한 항목
+
+| 항목 | 상태 | 반영 |
+|------|------|------|
+| 1차 온라인 평가는 nMAE와 정산금획득률 기반 | 확정 | metric 설계에서 두 지표 병행 |
+| 정산금획득률 정의 | 확정 | simulator 인터페이스에 반영 |
+| Public/Private 정산 기준 추후 공개 | 공식 공개 후 재검증 | 임계값 시나리오 복수 유지 |
+| 외부 데이터 규칙 추후 공개 | 공식 공개 후 재검증 | 외부 데이터 파이프라인 보류 |
+| 사전학습모델 공개일/원격 API 금지 | 확정 | model registry와 로컬 실행 검증 |
+
+### 10.2 피처 설계 보강
+
+Perplexity 리서치에서 반복 확인된 범용 후보는 아래 우선순위로 둔다.
+
+| 우선순위 | 피처군 | 상태 | 주의 |
+|----------|--------|------|------|
+| P0 | 풍향 sin/cos, u/v 기반 풍속, 풍속 제곱/세제곱 | 외부 리서치 | 공식 컬럼과 단위 확인 |
+| P0 | grid mean/std/max/min | 외부 리서치 | LDAPS/GFS 격자 구조 확인 |
+| P0 | issue/valid/lead time | 공식 공개 후 재검증 | cutoff validator와 함께 구현 |
+| P1 | air density, wind power density | 외부 리서치 | 온도/기압/습도 단위 확인 |
+| P1 | forecast spread, multi-run stats | 공식 공개 후 재검증 | 미래 issue time 누수 금지 |
+| 보류 | wake effect, terrain/RIX, 외부 DEM | 충돌/공식 공개 후 재검증 | 외부 데이터 규칙 전 사용 금지 |
+
+### 10.3 Validation split 보강
+
+- 기본은 rolling-origin expanding window로 유지한다.
+- 2024 전체 holdout과 계절별 fold를 함께 두어 2025 평가 분포 shift를 모사한다.
+- Group 3의 짧은 label 기간은 별도 fold에서 민감도를 본다.
+- `lag < forecast horizon`은 금지한다.
+- Public LB만 좋아지는 후처리나 conservative scaling은 롤백 후보로 기록한다.
+
+### 10.4 Chronos/AutoGluon 후보 판단
+
+| 후보 | 상태 | 판단 |
+|------|------|------|
+| LightGBM/CatBoost | 외부 리서치 | 1차 주력 baseline 유지 |
+| Chronos-2 | 외부 리서치/공식 공개 후 재검증 | covariate 지원 후보. P1 실험 |
+| Chronos-Bolt | 외부 리서치 | zero-shot/앙상블 보조. NWP 직접 반영 한계 |
+| AutoGluon-TimeSeries | 외부 리서치 | `num_val_windows`, stacking leakage, seed 재현성 확인 후 사용 |
+
+### 10.5 정산금 최적화 실험 후보
+
+| 실험 | 상태 | 조건 |
+|------|------|------|
+| capacity clipping | 외부 리서치 | 단위와 capacity 확인 후 P0 |
+| local settlement simulator | 공식 공개 후 재검증 | 공식 임계값 공개 후 확정 |
+| 6/8, 4/6 임계값 시나리오 비교 | 추론/충돌 | 공식 기준 전 민감도 분석 |
+| quantile/pinball loss | 외부 리서치 | local CV 기반으로만 선택 |
+| conservative scaling | 외부 리서치 | Public LB 직접 튜닝 금지 |
+| OOF bias/isotonic calibration | 외부 리서치 | train fold 내부에서만 fit |
+
+### 10.6 2차 Perplexity 질문
+
+다음 Perplexity 세션은 기존 워크숍 자료와 이번 synthesis 문서를 업로드한 뒤 수행한다.
+각 세션은 모델/모드/Computer 사용 여부를 프롬프트 상단에 명시한다.
+
+1. Dacon 공식 평가 페이지의 nMAE, 정산금획득률, Public/Private 기준 추후 공개 상태 재확인
+2. 외부 데이터 규칙이 새로 공개되었는지 규칙/FAQ/토론 탭 확인
+3. 워크숍 자료의 D-1 14:00, h016~h039, LDAPS/GFS grid 수와 Perplexity 주장 대조
+4. Chronos-2 공식 가중치 공개일, 라이선스, covariate 지원, 로컬 실행성 확인
+5. KMA/NOAA 1차 출처만으로 LDAPS/GFS 사양과 변수 재정리
+6. KPX 최신 정산제도와 Dacon 대회 평가 산식의 차이 분리
+
+---
+
+## 11. 실험 우선순위
+
+### 11.1 공개 전 준비 가능
 
 | 우선순위 | 작업 | 산출물 |
 |----------|------|--------|
@@ -922,7 +1042,7 @@ Perplexity 결과를 Codex 작업으로 가져올 때는 아래 형식으로 붙
 | P1 | validation fold 정의 | 2024 holdout, seasonal block |
 | P2 | Chronos/AutoGluon 후보 조사 | model registry |
 
-### 10.2 공개 직후 48시간
+### 11.2 공개 직후 48시간
 
 | 시간 | 작업 | 완료 기준 |
 |------|------|-----------|
@@ -935,7 +1055,7 @@ Perplexity 결과를 Codex 작업으로 가져올 때는 아래 형식으로 붙
 
 ---
 
-## 11. 산출물 구조 제안
+## 12. 산출물 구조 제안
 
 공식 데이터 공개 후 아래 구조로 확장한다.
 
@@ -965,7 +1085,7 @@ Perplexity 결과를 Codex 작업으로 가져올 때는 아래 형식으로 붙
 
 ---
 
-## 12. 결정 로그
+## 13. 결정 로그
 
 | 날짜 | 결정 | 이유 |
 |------|------|------|
@@ -974,19 +1094,18 @@ Perplexity 결과를 Codex 작업으로 가져올 때는 아래 형식으로 붙
 | 2026-06-28 | tabular NWP post-processing 모델을 1차 주력으로 설정 | 다변량 기상예보와 물리 피처를 직접 활용하기 좋음 |
 | 2026-06-28 | Chronos 계열은 보조 baseline/앙상블 후보로 유지 | 데모와 공식 자료가 있으나 대회 데이터 구조에는 탭ular 모델이 안전 |
 | 2026-06-28 | Perplexity Space/세션/프롬프트 운영표를 설계서에 내장 | 리서치 결과가 실험 설계로 바로 이어지게 하기 위함 |
+| 2026-06-28 | Perplexity 1회차 결과를 공식/외부/충돌/재검증/추론으로 재분류 | 워크숍 자료 없이 수행된 리서치라 공식 사실로 승격하지 않기 위함 |
 
 ---
 
-## 13. 다음 작업
+## 14. 다음 작업
 
-다음 작업은 `운영 마스터플랜`이 아니라,
-사용자 피드백에 따라 아래 둘 중 하나를 선택할 수 있다.
+다음 작업은 이번 1회차 반영 이후 사용자가 선택할 수 있다.
 
-1. **Perplexity 리서치 세션 실제 수행 후 설계 보강**
-   사용자가 Perplexity 결과를 가져오면 이 문서의 피처/validation/model 후보를 업데이트한다.
+1. **2차 Perplexity 질문 수행 후 설계 보강**
+   공식 평가 산식, 외부 데이터 규칙, Chronos-2, LDAPS/GFS 1차 출처를 재확인한다.
 
 2. **운영 마스터플랜 작성**
    제출 횟수, 실험 로그, 산출물 검증, 2차 발표 준비를 일정표로 고정한다.
 
-데이터 공개 전 남은 기간을 고려하면 1번을 먼저 하고,
-그 결과를 반영한 뒤 운영 마스터플랜으로 넘어가는 흐름이 가장 자연스럽다.
+R3 원칙에 따라 이번 작업은 Perplexity 리서치 결과 반영 1회차에서 멈춘다.

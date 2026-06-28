@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BARAM Perplexity 리서치 반영 1회차</title>
+<style>
+  body { margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; background: #0f1115; color: #e6e9ef; line-height: 1.65; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 36px 20px 64px; }
+  a { color: #58a6ff; }
+  h1 { margin: 0 0 6px; font-size: 1.7rem; }
+  h2 { color: #58a6ff; font-size: 1.05rem; margin-top: 28px; }
+  .sub { color: #8b93a7; margin-bottom: 24px; }
+  .panel { background: #1a1d24; border: 1px solid #2a2f3a; border-radius: 12px; padding: 16px 20px; }
+  li { margin: 6px 0; }
+  code { background: #0b0d11; padding: 1px 6px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Perplexity 리서치 결과 반영 1회차</h1>
+  <div class="sub">2026-06-28 KST · docs/baram-perplexity-synthesis</div>
+  <div class="panel">
+    <h2>완료</h2>
+    <ul>
+      <li>사용자 제공 Perplexity 원문 보고서와 Chronos 데모 노트북을 검토하고, 공식/외부/충돌/재검증/추론 상태로 재분류했다.</li>
+      <li><code>docs/groundwork/02-perplexity-research-synthesis.md</code>를 생성해 2차 Perplexity 질문 후보와 세션별 설정을 정리했다.</li>
+      <li><code>docs/design/02-data-modeling-spec.md</code>에 피처 설계, validation, Chronos/AutoGluon, 정산금 실험 후보 보강 내용을 연결했다.</li>
+    </ul>
+    <h2>검증</h2>
+    <ul>
+      <li>공식 Dacon 설명/규칙/평가/데이터 페이지를 대조해 외부 데이터 규칙과 Public/Private 정산 기준이 추후 공개 상태임을 보수적으로 반영했다.</li>
+      <li>Perplexity 결과가 공식 사실이 아니며 공식 기준 우선이라는 문구를 synthesis와 설계서에 모두 남겼다.</li>
+    </ul>
+    <h2>다음</h2>
+    <ul>
+      <li>2차 Perplexity 질문으로 공식 평가 산식, 외부 데이터 규칙, Chronos-2, LDAPS/GFS 1차 출처를 재검증한다.</li>
+      <li>사용자 지시 전에는 운영 마스터플랜이나 코드 구현으로 넘어가지 않는다.</li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>
