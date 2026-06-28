@@ -22,6 +22,7 @@
 |------|------|------|
 | [01-strategy-prd.md](groundwork/01-strategy-prd.md) | 작성 완료 | 문제 정의, 데이터 팩트 레저, 평가/규정, 전략 요구사항 |
 | [02-perplexity-research-synthesis.md](groundwork/02-perplexity-research-synthesis.md) | 작성 완료 | Perplexity 1회차 결과를 공식/외부/충돌/재검증/추론으로 재분류 |
+| [03-perplexity-round2-question-pack.md](groundwork/03-perplexity-round2-question-pack.md) | 작성 완료 | 2차 Perplexity 재검증을 위한 R2-1~R2-6 세션별 프롬프트 패키지 |
 | [02-data-modeling-spec.md](design/02-data-modeling-spec.md) | 작성 완료 | 스키마 검증, cutoff, 피처, validation, metric, Perplexity 운영 설계 |
 
 ## 다음 문서 후보
