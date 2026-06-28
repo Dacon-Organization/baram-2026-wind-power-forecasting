@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BARAM 2026 · 프로젝트 진척 대시보드</title>
+<style>
+  :root {
+    --bg: #0f1115; --card: #1a1d24; --border: #2a2f3a; --text: #e6e9ef;
+    --muted: #8b93a7; --done: #3fb950; --progress: #d29922; --todo: #6e7681; --accent: #58a6ff;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 36px 20px 64px; }
+  h1 { font-size: 1.8rem; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin-bottom: 24px; }
+  .sub a { color: var(--accent); }
+  h2 { font-size: 1.05rem; margin: 28px 0 12px; color: var(--accent); }
+  .bar { height: 12px; border-radius: 6px; background: var(--border); overflow: hidden; margin: 6px 0 6px; }
+  .bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--done), var(--accent)); }
+  .barlabel { color: var(--muted); font-size: .82rem; margin-bottom: 20px; }
+  .cards { display: grid; gap: 14px; }
+  a.card { display: block; text-decoration: none; color: inherit; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; transition: border-color .15s; }
+  a.card:hover { border-color: var(--accent); }
+  .card .date { color: var(--muted); font-size: .82rem; }
+  .card .title { font-size: 1.05rem; font-weight: 600; margin: 2px 0 6px; }
+  .card .summary { color: var(--muted); font-size: .9rem; }
+  .pipeline { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 8px 20px; }
+  .pipeline li { margin: 7px 0; display: flex; gap: 10px; align-items: flex-start; list-style: none; }
+  .pipeline { padding-left: 20px; }
+  .tag { font-size: .72rem; padding: 2px 8px; border-radius: 999px; font-weight: 600; flex-shrink: 0; }
+  .t-done { background: rgba(63,185,80,.15); color: var(--done); }
+  .t-progress { background: rgba(210,153,34,.15); color: var(--progress); }
+  .t-todo { background: rgba(110,118,129,.2); color: var(--todo); }
+  code { background: #0b0d11; padding: 1px 6px; border-radius: 4px; font-size: .85em; }
+  footer { color: var(--muted); font-size: .8rem; text-align: center; margin-top: 36px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>2026 BARAM 풍력발전량 예측 — 진척 대시보드</h1>
+  <div class="sub">
+    데이콘 BARAM 2026 · 대회 시작 2026-07-06 ·
+    <a href="../../../dev/dashboard/index.html">Dacon 전사 대시보드</a> ·
+    <a href="../../README.md">프로젝트 README</a>
+  </div>
+
+  <h2>전체 진척률</h2>
+  <div class="bar"><i style="width:15%"></i></div>
+  <div class="barlabel">공식 데이터 공개 전 전략 설계 단계. 사전 워크숍 자료 기반 문제 정의와 데이터 팩트 레저 작성 완료.</div>
+
+  <h2>마일스톤 파이프라인</h2>
+  <ul class="pipeline">
+    <li><span class="tag t-done">DONE</span><div>사전 워크숍 자료·데모 노트북·공식 안내 1차 판독</div></li>
+    <li><span class="tag t-done">DONE</span><div>전략 PRD 작성 — 문제 정의, 평가/규정, 데이터 팩트 레저</div></li>
+    <li><span class="tag t-progress">NEXT</span><div>데이터·모델링 설계서 — 공식 데이터 공개 직후 검증 템플릿과 모델링 계획</div></li>
+    <li><span class="tag t-todo">TODO</span><div>운영 마스터플랜 — 제출, 실험 추적, 산출물 검증, 발표 준비</div></li>
+    <li><span class="tag t-todo">TODO</span><div>베이스라인 파이프라인과 metric 재현</div></li>
+  </ul>
+
+  <h2>작업 로그</h2>
+  <div class="cards">
+    <a class="card" href="log/2026-06-28-baram-strategy-prd.html">
+      <div class="date">2026-06-28 (KST) · docs/baram-strategy-prd</div>
+      <div class="title">전략 PRD — 데이터 팩트 레저 포함</div>
+      <div class="summary">사용자 확정 순서(전략 PRD → 데이터·모델링 설계서 → 운영 마스터플랜)에 맞춰 첫 문서 작성. 사전 워크숍 사진의 KPX 그룹/터빈/용량/LDAPS/GFS/SCADA/평가/누수 규칙을 확정·불확실·재검증 상태로 분리.</div>
+    </a>
+  </div>
+
+  <footer>새 작업 기록: <code>_template.html</code> 복사 → <code>log/YYYY-MM-DD-&lt;slug&gt;.html</code> → 이 카드 목록·진척률 갱신</footer>
+</div>
+</body>
+</html>

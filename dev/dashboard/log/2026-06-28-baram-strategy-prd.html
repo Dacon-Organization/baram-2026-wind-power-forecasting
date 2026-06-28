@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BARAM 전략 PRD 작업 로그</title>
+<style>
+  body { margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; background: #0f1115; color: #e6e9ef; line-height: 1.65; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 36px 20px 64px; }
+  a { color: #58a6ff; }
+  h1 { margin: 0 0 6px; font-size: 1.7rem; }
+  h2 { color: #58a6ff; font-size: 1.05rem; margin-top: 28px; }
+  .sub { color: #8b93a7; margin-bottom: 24px; }
+  .panel { background: #1a1d24; border: 1px solid #2a2f3a; border-radius: 12px; padding: 16px 20px; }
+  li { margin: 6px 0; }
+  code { background: #0b0d11; padding: 1px 6px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>전략 PRD — 데이터 팩트 레저 포함</h1>
+  <div class="sub">2026-06-28 KST · docs/baram-strategy-prd</div>
+  <div class="panel">
+    <h2>완료</h2>
+    <ul>
+      <li>프로젝트 README와 문서 인덱스를 생성했다.</li>
+      <li>전략 PRD를 작성하고 문제 정의, 이해관계자, 평가식, 규정 리스크를 정리했다.</li>
+      <li>사전 워크숍 사진에서 판독한 KPX 그룹, 터빈 수, 용량, 터빈 모델, 데이터 기간, LDAPS/GFS/SCADA, 예측 기준시점 정보를 데이터 팩트 레저로 분리했다.</li>
+      <li>지명은 불확실 처리하고 색상 기반 그룹-터빈 매핑만 확정 사실로 반영했다.</li>
+      <li>프로젝트 대시보드와 루트 대시보드 프로젝트 카드를 갱신했다.</li>
+    </ul>
+
+    <h2>검증</h2>
+    <ul>
+      <li>문서 내 데이터 항목을 <code>확정</code>, <code>판독 불확실</code>, <code>공식 공개 후 재검증</code>, <code>추론</code>으로 구분했다.</li>
+      <li>데모 노트북의 synthetic 데이터 구조를 실제 대회 데이터로 단정하지 않도록 명시했다.</li>
+      <li>평가 지표 표기 충돌(FICR/SCR)은 재검증 항목으로 남겼다.</li>
+    </ul>
+
+    <h2>다음</h2>
+    <ul>
+      <li>데이터·모델링 설계서 작성: 공식 데이터 공개 직후 스키마 검증표, 피처 설계, validation split, baseline metric 재현 설계.</li>
+      <li>필요 시 사용자와 대화하며 불확실한 사진 판독 항목을 추가 확인한다.</li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>
