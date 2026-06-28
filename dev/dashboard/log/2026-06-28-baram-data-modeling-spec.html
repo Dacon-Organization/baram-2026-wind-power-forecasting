@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BARAM 데이터·모델링 설계서 작업 로그</title>
+<style>
+  body { margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; background: #0f1115; color: #e6e9ef; line-height: 1.65; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 36px 20px 64px; }
+  a { color: #58a6ff; }
+  h1 { margin: 0 0 6px; font-size: 1.7rem; }
+  h2 { color: #58a6ff; font-size: 1.05rem; margin-top: 28px; }
+  .sub { color: #8b93a7; margin-bottom: 24px; }
+  .panel { background: #1a1d24; border: 1px solid #2a2f3a; border-radius: 12px; padding: 16px 20px; }
+  li { margin: 6px 0; }
+  code { background: #0b0d11; padding: 1px 6px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>데이터·모델링 설계서 — Perplexity 운영표 포함</h1>
+  <div class="sub">2026-06-28 KST · docs/baram-data-modeling-spec</div>
+  <div class="panel">
+    <h2>완료</h2>
+    <ul>
+      <li>공식 데이터 공개 전에도 사용할 수 있는 스키마 검증 템플릿을 작성했다.</li>
+      <li>D-1 14:00 KST 예측 기준시점, lead time, available time 검증 절차를 정의했다.</li>
+      <li>LDAPS/GFS/SCADA/KPX label 기반 피처 설계와 SCADA 활용 경계를 정리했다.</li>
+      <li>Group 1/2와 Group 3의 label 기간 차이를 반영한 validation split 초안을 작성했다.</li>
+      <li>1-NMAE, 정산금획득률 계열 지표, total score 재현 설계를 공식 재검증 항목과 함께 정리했다.</li>
+      <li>Perplexity Space, 세션별 모드/모델 성향, Deep Research/Computer 사용 기준, 프롬프트와 결과 반입 포맷을 추가했다.</li>
+    </ul>
+
+    <h2>검증</h2>
+    <ul>
+      <li>공식 데이터 공개 전 컬럼명·파일명·단위를 단정하지 않도록 스키마는 템플릿으로만 작성했다.</li>
+      <li>Perplexity 결과를 공식 사실로 승격하지 않는 규칙을 문서화했다.</li>
+      <li>원격 API 기반 모델 추론 금지 규정을 모델 후보 섹션에 반영했다.</li>
+    </ul>
+
+    <h2>다음</h2>
+    <ul>
+      <li>Perplexity 세션 결과를 가져오면 피처/validation/model 후보를 보강한다.</li>
+      <li>그 다음 작업으로 운영 마스터플랜을 작성한다.</li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>

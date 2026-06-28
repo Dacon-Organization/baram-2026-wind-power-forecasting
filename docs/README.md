@@ -21,11 +21,9 @@
 | 문서 | 상태 | 설명 |
 |------|------|------|
 | [01-strategy-prd.md](groundwork/01-strategy-prd.md) | 작성 완료 | 문제 정의, 데이터 팩트 레저, 평가/규정, 전략 요구사항 |
+| [02-data-modeling-spec.md](design/02-data-modeling-spec.md) | 작성 완료 | 스키마 검증, cutoff, 피처, validation, metric, Perplexity 운영 설계 |
 
 ## 다음 문서 후보
 
-1. `design/02-data-modeling-spec.md`
-   공식 데이터 공개 직후 작성할 데이터 스키마, 피처, 검증, 모델링 설계서
-
-2. `design/03-operations-master-plan.md`
+1. `design/03-operations-master-plan.md`
    제출 운영, 실험 추적, 산출물 검증, 2차 발표 준비 계획

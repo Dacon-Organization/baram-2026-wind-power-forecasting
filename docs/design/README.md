@@ -2,11 +2,11 @@
 
 이 폴더는 전략 PRD 이후의 실행 설계를 보관합니다.
 
-## 예정 문서
+## 문서 목록
 
 | 문서 | 목적 |
 |------|------|
-| `02-data-modeling-spec.md` | 공식 데이터 공개 후 스키마 검증, 피처 설계, 검증 전략, 모델 후보 확정 |
+| [02-data-modeling-spec.md](02-data-modeling-spec.md) | 공식 데이터 공개 전 준비 가능한 스키마 검증, cutoff, 피처, 검증, 모델 후보, Perplexity 운영 설계 |
 | `03-operations-master-plan.md` | 리더보드 제출, 실험 추적, 산출물 검증, 발표 평가 준비 |
 
 ## 작성 전제
