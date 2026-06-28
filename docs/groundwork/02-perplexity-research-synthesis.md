@@ -2,7 +2,7 @@
 
 > 작성일: 2026-06-28 KST
 > 상태: 공식 데이터 공개 전 리서치 반영 1회차
-> 연결 문서: [전략 PRD](01-strategy-prd.md), [데이터·모델링 설계서](../design/02-data-modeling-spec.md), [2차 Perplexity 재검증 질문 패키지](03-perplexity-round2-question-pack.md)
+> 연결 문서: [전략 PRD](01-strategy-prd.md), [데이터·모델링 설계서](../design/02-data-modeling-spec.md), [2차 Perplexity 재검증 질문 패키지](03-perplexity-round2-question-pack.md), [Perplexity 리서치 종합 2회차](04-perplexity-round2-results-synthesis.md)
 
 ---
 
@@ -137,6 +137,7 @@
 아래 세션은 기존 워크숍 자료와 이번 synthesis 문서를 업로드한 뒤 수행한다.
 Computer 도구는 공식 페이지/PDF 탐색이 검색만으로 실패할 때만 사용한다.
 완성된 세션별 프롬프트는 [2차 Perplexity 재검증 질문 패키지](03-perplexity-round2-question-pack.md)를 기준으로 한다.
+실제 R2-1~R2-6 반입 결과와 설계 반영 결정은 [Perplexity 리서치 종합 2회차](04-perplexity-round2-results-synthesis.md)를 기준으로 한다.
 
 | 세션 | 권장 모드/모델 | 심층 리서치 | Computer | 질문 목적 |
 |------|----------------|------------|----------|-----------|

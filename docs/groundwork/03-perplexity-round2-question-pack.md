@@ -3,6 +3,7 @@
 > 작성일: 2026-06-28 KST
 > 상태: 공식 데이터 공개 전 2차 Perplexity 재검증용 프롬프트 패키지
 > 기반 문서: [전략 PRD](01-strategy-prd.md), [Perplexity 리서치 종합 1회차](02-perplexity-research-synthesis.md), [데이터·모델링 설계서](../design/02-data-modeling-spec.md)
+> 결과 문서: [Perplexity 리서치 종합 2회차](04-perplexity-round2-results-synthesis.md)
 > 범위: 2차 Perplexity 질문 패키지 작성만 포함한다. 운영 마스터플랜 작성, 코드 구현, 모델링 파이프라인 생성은 포함하지 않는다.
 
 ---

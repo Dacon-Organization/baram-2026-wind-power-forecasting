@@ -23,12 +23,13 @@
 | [01-strategy-prd.md](groundwork/01-strategy-prd.md) | 작성 완료 | 문제 정의, 데이터 팩트 레저, 평가/규정, 전략 요구사항 |
 | [02-perplexity-research-synthesis.md](groundwork/02-perplexity-research-synthesis.md) | 작성 완료 | Perplexity 1회차 결과를 공식/외부/충돌/재검증/추론으로 재분류 |
 | [03-perplexity-round2-question-pack.md](groundwork/03-perplexity-round2-question-pack.md) | 작성 완료 | 2차 Perplexity 재검증을 위한 R2-1~R2-6 세션별 프롬프트 패키지 |
+| [04-perplexity-round2-results-synthesis.md](groundwork/04-perplexity-round2-results-synthesis.md) | 작성 완료 | R2-1~R2-6 재검증 결과 반입, 설계 반영 결정, 후속 세션 운영 가이드 |
 | [02-data-modeling-spec.md](design/02-data-modeling-spec.md) | 작성 완료 | 스키마 검증, cutoff, 피처, validation, metric, Perplexity 운영 설계 |
 
 ## 다음 문서 후보
 
-1. Perplexity 2차 질문 결과 보강
-   공식 평가 산식, 외부 데이터 규칙, Chronos-2, LDAPS/GFS 1차 출처 재검증
+1. 공식 데이터 공개 후 스키마·평가 산식 재검증
+   nMAE 코드, 정산 임계값, Public/Private 기준, LDAPS/GFS 메타데이터 확인
 
 2. `design/03-operations-master-plan.md`
    제출 운영, 실험 추적, 산출물 검증, 2차 발표 준비 계획
