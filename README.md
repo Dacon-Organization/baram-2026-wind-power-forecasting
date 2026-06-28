@@ -75,7 +75,9 @@
 │   ├── groundwork/
 │   │   └── 01-strategy-prd.md
 │   └── design/
-│       └── README.md
+│       ├── README.md
+│       ├── 02-data-modeling-spec.md
+│       └── 03-operations-master-plan.md
 └── dev/
     └── dashboard/
         ├── index.html
@@ -92,8 +94,8 @@
 - [x] Perplexity 리서치 결과 반영 1회차
 - [x] Perplexity 2차 질문 패키지 작성
 - [x] Perplexity 2차 재검증 결과 반입
+- [x] 운영 마스터플랜 작성
 - [ ] 공식 데이터 공개 후 스키마 검증
-- [ ] 운영 마스터플랜 작성
 - [ ] 베이스라인 재현 파이프라인 구축
 - [ ] 제출/검증 자동화 구축
 

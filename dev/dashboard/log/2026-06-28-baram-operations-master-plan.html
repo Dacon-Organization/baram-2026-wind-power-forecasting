@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BARAM 운영 마스터플랜</title>
+<style>
+  body { margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; background: #0f1115; color: #e6e9ef; line-height: 1.65; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 36px 20px 64px; }
+  a { color: #58a6ff; }
+  h1 { margin: 0 0 6px; font-size: 1.7rem; }
+  h2 { color: #58a6ff; font-size: 1.05rem; margin-top: 28px; }
+  .sub { color: #8b93a7; margin-bottom: 24px; }
+  .panel { background: #1a1d24; border: 1px solid #2a2f3a; border-radius: 12px; padding: 16px 20px; }
+  li { margin: 6px 0; }
+  code { background: #0b0d11; padding: 1px 6px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>운영 마스터플랜 작성</h1>
+  <div class="sub">2026-06-28 KST · docs/baram/operations-master-plan</div>
+  <div class="panel">
+    <h2>완료</h2>
+    <ul>
+      <li><code>docs/design/03-operations-master-plan.md</code>를 생성해 공식 데이터 공개 전, 공개 직후 48시간, 모델링 기간, 제출 마감 전, 2차 검증 단계별 운영 계획을 정리했다.</li>
+      <li>1일 5회 제출 슬롯, 최종 제출 수동 선택 체크리스트, 실험 로그·seed·commit·데이터 버전 기록 원칙을 문서화했다.</li>
+      <li>외부 데이터 규칙 공개 전 보류, 공식 데이터 파일의 Perplexity 등 외부 도구 업로드 보류, Chronos-2 P1 후보와 tabular NWP P0 주력 원칙을 반영했다.</li>
+      <li>LDAPS UM/KIM 전환 리스크, 6/8·4/6 정산금 simulator 시나리오 분리, KPX 제도 발표 배경 전용 원칙, 후속 Perplexity 세션 기준, 리스크 레지스터와 역할/산출물 체크리스트를 포함했다.</li>
+      <li><code>docs/README.md</code>, <code>docs/design/README.md</code>, <code>README.md</code>의 문서 목록과 진행 현황을 갱신했다.</li>
+    </ul>
+    <h2>검증</h2>
+    <ul>
+      <li>새 문서가 운영 계획 문서이며 코드 구현, 모델링 파이프라인 생성, 데이터 수집으로 넘어가지 않았는지 확인했다.</li>
+      <li>제출 운영, 실험 추적, 외부 데이터 보류, Perplexity 세션 운영 기준, R2 핵심 결정이 모두 포함되어 있는지 확인했다.</li>
+      <li>프로젝트 README, docs 인덱스, 프로젝트 대시보드가 새 문서 상태를 반영하도록 갱신했다.</li>
+    </ul>
+    <h2>다음</h2>
+    <ul>
+      <li>공식 데이터 공개 후 스키마, 평가 산식, 정산 임계값, LDAPS/GFS 메타데이터를 재검증한다.</li>
+      <li>외부 데이터 규칙과 공식 데이터 외부 업로드 허용 여부가 확인되기 전까지 관련 구현과 업로드를 보류한다.</li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>

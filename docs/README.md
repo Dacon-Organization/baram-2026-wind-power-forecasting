@@ -25,11 +25,12 @@
 | [03-perplexity-round2-question-pack.md](groundwork/03-perplexity-round2-question-pack.md) | 작성 완료 | 2차 Perplexity 재검증을 위한 R2-1~R2-6 세션별 프롬프트 패키지 |
 | [04-perplexity-round2-results-synthesis.md](groundwork/04-perplexity-round2-results-synthesis.md) | 작성 완료 | R2-1~R2-6 재검증 결과 반입, 설계 반영 결정, 후속 세션 운영 가이드 |
 | [02-data-modeling-spec.md](design/02-data-modeling-spec.md) | 작성 완료 | 스키마 검증, cutoff, 피처, validation, metric, Perplexity 운영 설계 |
+| [03-operations-master-plan.md](design/03-operations-master-plan.md) | 작성 완료 | 공식 데이터 공개 전 제출 운영, 실험 추적, 외부 데이터 보류, 2차 검증 준비 계획 |
 
 ## 다음 문서 후보
 
 1. 공식 데이터 공개 후 스키마·평가 산식 재검증
    nMAE 코드, 정산 임계값, Public/Private 기준, LDAPS/GFS 메타데이터 확인
 
-2. `design/03-operations-master-plan.md`
-   제출 운영, 실험 추적, 산출물 검증, 2차 발표 준비 계획
+2. 공식 데이터 공개 직후 검증 결과 반입
+   파일 inventory, schema audit, submission format, metric decision note
