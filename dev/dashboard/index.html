@@ -46,8 +46,8 @@
   </div>
 
   <h2>전체 진척률</h2>
-  <div class="bar"><i style="width:84%"></i></div>
-  <div class="barlabel">공식 데이터 공개 후 전략·데이터·운영 설계를 재정렬. 공식 데이터 로컬 미러, baseline/평가 코드 참조, LLM Wiki, 제출 복구 규칙, Perplexity P3 리서치 반입, 공식 평가 산식 재현, 01 metric 상세 분석 노트북, 공식 baseline 재현 분석 노트북까지 완료.</div>
+  <div class="bar"><i style="width:88%"></i></div>
+  <div class="barlabel">공식 데이터 공개 후 전략·데이터·운영 설계를 재정렬. 공식 데이터 로컬 미러, baseline/평가 코드 참조, LLM Wiki, 제출 복구 규칙, Perplexity P3 리서치 반입, 공식 평가 산식 재현, 01 metric 상세 분석 노트북, 공식 baseline 재현 분석 노트북, 00 공식 데이터 감사 노트북까지 완료.</div>
 
   <h2>마일스톤 파이프라인</h2>
   <ul class="pipeline">
@@ -65,11 +65,17 @@
     <li><span class="tag t-done">DONE</span><div>공식 평가 산식 재현 코드와 단위 테스트 작성</div></li>
     <li><span class="tag t-done">DONE</span><div>공식 metric 재현 상세 분석 노트북과 시각화 보강</div></li>
     <li><span class="tag t-done">DONE</span><div>공식 Baseline 재현 분석 노트북 작성</div></li>
+    <li><span class="tag t-done">DONE</span><div>공식 데이터 전체 감사 노트북 작성 — MANIFEST, NWP, label, SCADA, info, submission 품질 기준 고정</div></li>
     <li><span class="tag t-progress">NEXT</span><div>베이스라인 RandomForest train/inference 분리</div></li>
   </ul>
 
   <h2>작업 로그</h2>
   <div class="cards">
+    <a class="card" href="log/2026-07-06-baram-official-data-audit.html">
+      <div class="date">2026-07-06 (KST) · docs/baram-official-data-audit</div>
+      <div class="title">공식 데이터 감사 노트북</div>
+      <div class="summary">notebooks/00_official_data_audit.ipynb를 생성해 MANIFEST hash, data_description 대비 파일/컬럼/기간, LDAPS/GFS grid coverage와 forecast lead, label 결측·capacity·10% valid, sample submission, SCADA 품질, info.xlsx 설비 메타를 감사. 각 표/시각화 뒤에 관찰·해석·다음 판단을 기록하고 Decision Box로 stage 금지, Group 3 mask, weather imputation, SCADA leakage, cutoff 검증 기준을 정리.</div>
+    </a>
     <a class="card" href="log/2026-07-06-baram-metric-notebook-detail.html">
       <div class="date">2026-07-06 (KST) · feature/baram/metric-notebook-detail</div>
       <div class="title">metric 재현 분석 노트북 보강</div>
