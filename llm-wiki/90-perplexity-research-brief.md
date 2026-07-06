@@ -1,113 +1,350 @@
 # Perplexity 추가 조사 브리프
 
-> 현재 Codex 세션에서는 Perplexity 커넥터가 없으므로, 공식 웹 출처 확인과 Perplexity용 프롬프트 패키지 작성까지 수행했다. 다음 세션 또는 사용자가 직접 Perplexity Space에서 아래 프롬프트를 실행한다.
+> 현재 Codex 세션에는 Perplexity 커넥터가 없으므로, 아래 프롬프트를 사용자가 Perplexity Space에서 직접 실행하거나 다음 세션에서 결과를 반입한다.
+> 모든 프롬프트는 한국어 완결형이다. 공통 양식을 따로 import하지 않고, 각 프롬프트 안에 참고 자료, 확정 맥락, 주의사항, 출력 형식을 모두 포함했다.
 
-## 업로드 또는 첨부 권장 자료
+## 실행 원칙
 
-공식 데이터 파일 업로드는 대회 규정과 팀 판단을 확인한 뒤에만 수행합니다. 우선은 아래 문서만 사용합니다.
-
-- `docs/design/04-final-solution-blueprint.md`
-- `llm-wiki/00-source-map.md`
-- `llm-wiki/01-problem-definition.md`
-- `llm-wiki/02-requirements.md`
-- `llm-wiki/03-market-research.md`
-- 공식 DACON URL 3개: overview, evaluation, rules
+- 권장 실행 순서: P3-1 -> P3-2 -> P3-3 -> P3-4
+- 권장 첨부: `docs/design/04-final-solution-blueprint.md`, `llm-wiki/00-source-map.md`, `llm-wiki/01-problem-definition.md`, `llm-wiki/02-requirements.md`, `llm-wiki/03-market-research.md`, `llm-wiki/04-versioning-recovery.md`
+- 원본 대회 데이터(`data/raw/open/*.csv`, `*.xlsx`)와 원본 노트북은 대회 규정과 팀 판단을 확인하기 전까지 외부 서비스에 업로드하지 않는다.
+- Perplexity 결과는 다음 세션에서 공식 사실, 외부 조사, 추론, 권고, 불확실성으로 다시 분류한 뒤 LLM Wiki에 반입한다.
 
 ## Session P3-1: 요구사항 정의 재검증
 
 ```text
-You are helping with the DACON BARAM 2026 wind power forecasting competition.
+당신은 DACON "제3회 풍력발전량 예측 AI 경진대회 - BARAM 2026" 프로젝트의 요구사항 정의를 재검증하는 리서치 파트너입니다.
 
-Use only official DACON pages, the attached project docs, and primary/public institutional sources.
+[목표]
+공식 데이터, baseline 코드, 평가 기준이 공개된 이후의 요구사항을 다시 정리하세요. 특히 학습/추론(train/inference) 분리, 평가 산식(metric) 재현, 제출 파일 생성, 실험 추적, 제출 실패 복구, 2차 산출물 검증 관점에서 누락 요구사항을 찾는 것이 목표입니다.
 
-Task:
-Now that official data, baseline, and evaluation metric code are available, refine the requirements definition.
+[반드시 참고할 공식/로컬 자료]
+1. DACON 대회 개요: https://dacon.io/competitions/official/236727/overview/description
+2. DACON 평가: https://dacon.io/competitions/official/236727/overview/evaluation
+3. DACON 규칙: https://dacon.io/competitions/official/236727/overview/rules
+4. 첨부 로컬 문서가 있다면 우선 참고:
+   - docs/design/04-final-solution-blueprint.md
+   - llm-wiki/00-source-map.md
+   - llm-wiki/01-problem-definition.md
+   - llm-wiki/02-requirements.md
+   - llm-wiki/04-versioning-recovery.md
 
-Return in Korean:
-1. Functional requirements for train/inference, metric reproduction, submission generation, experiment tracking.
-2. Data governance requirements for official raw data, external data, point-in-time validation, and reproducibility.
-3. Risks that can cause disqualification or score recovery failure.
-4. A prioritized backlog for the next 72 hours.
+[확정된 대회 맥락]
+- 과제: 기상 예보 데이터와 터빈 SCADA 실측 데이터를 활용하여 3개 KPX 그룹별 풍력 발전량을 예측한다.
+- train 데이터: LDAPS, GFS, train_labels, VESTAS SCADA, UNISON SCADA.
+- test 데이터: LDAPS, GFS. 평가 기간 SCADA는 제공되지 않는다.
+- 제출 파일: sample_submission.csv 형식, 총 8,760개 행.
+- 공식 평가식: Score = 0.5 x 1-NMAE + 0.5 x FICR.
+- 평가는 실제 발전량이 그룹 설비용량의 10% 이상인 시간대만 대상으로 한다.
+- FICR 정산 기준: 시간별 nMAE가 6% 이하이면 4원/kWh, 6% 초과 8% 이하이면 3원/kWh, 8% 초과이면 0원/kWh.
+- 1차 평가는 Private Score 중심이며, 상위권은 학습(train) 코드와 추론(inference) 코드, 모델, 외부 데이터, 발표 PDF를 제출해야 한다.
+- 코드와 주석은 UTF-8이어야 하며, 제출 코드는 Private Score를 오차 범위 내에서 복원할 수 있어야 한다.
+- 외부 데이터, 사전학습 모델, API 기반 모델 사용은 대회 규칙을 기준으로 판단해야 한다.
 
-Clearly separate official facts, local project decisions, and recommendations.
+[조사 및 분석 지시]
+1. 공식 페이지와 첨부 문서의 요구사항을 비교해 필수 요구사항, 권장 요구사항, 보류 요구사항으로 분류하세요.
+2. 학습/추론 분리 관점에서 필요한 파일 구조, 입력/출력 계약, 실행 순서, 재현성 기록 항목을 제안하세요.
+3. 평가 산식 재현 관점에서 반드시 검증해야 할 예외 상황을 정리하세요.
+4. 제출 실패나 Private Score 복구 실패를 유발할 수 있는 리스크를 정리하세요.
+5. 앞으로 72시간 안에 처리할 백로그를 우선순위로 제안하세요.
+
+[주의사항]
+- 공식 사실, 첨부 문서에 있는 로컬 결정, 외부 조사 결과, 당신의 추론/권고를 반드시 분리하세요.
+- 공식 대회 기준과 외부 제도 설명이 충돌하면 공식 대회 기준을 우선하세요.
+- 원본 대회 데이터 파일을 외부에 업로드했다고 가정하지 마세요.
+- 불확실하거나 출처가 약한 내용은 "재검증 필요"로 표시하세요.
+
+[출력 형식]
+반드시 아래 Markdown 형식으로만 한국어로 출력하세요.
+
+## Perplexity 세션 결과
+
+- 세션: P3-1 요구사항 정의 재검증
+- 날짜:
+- 모드/모델:
+- 업로드 파일:
+
+### 1. 공식 사실
+| 항목 | 내용 | 출처 URL 또는 첨부 문서 | 설계 영향 |
+|---|---|---|---|
+
+### 2. 로컬 프로젝트 결정과 비교
+| 현재 결정 | 유지/수정/보류 | 근거 | 필요한 후속 작업 |
+|---|---|---|---|
+
+### 3. 필수 요구사항
+| 영역 | 요구사항 | 검증 방법 | 우선순위 |
+|---|---|---|---|
+
+### 4. 제출 및 복구 리스크
+| 리스크 | 발생 조건 | 영향 | 예방/복구 방안 |
+|---|---|---|---|
+
+### 5. 다음 72시간 백로그
+| 순위 | 작업 | 완료 기준 | 관련 문서/코드 |
+|---|---|---|---|
+
+### 6. 재검증 필요 항목
+| 항목 | 왜 불확실한가 | 확인할 출처 |
+|---|---|---|
+
+### 7. 출처 목록
+| 번호 | 출처명 | URL | 신뢰도 |
+|---|---|---|---|
 ```
 
 ## Session P3-2: 문제 정의와 발표 서사
 
 ```text
-Build a presentation-ready problem definition for DACON BARAM 2026.
+당신은 DACON "제3회 풍력발전량 예측 AI 경진대회 - BARAM 2026" 프로젝트의 문제 정의와 10분 발표 서사를 정리하는 리서치 파트너입니다.
 
-Context:
-- Forecast hourly wind power for 3 KPX groups in 2025.
-- Inputs: LDAPS/GFS forecast grids, train labels, train SCADA.
-- Score: 0.5 * 1-NMAE + 0.5 * FICR.
-- Evaluation excludes hours where actual generation is below 10% of capacity.
-- Need train/inference reproducibility and final presentation.
+[목표]
+공식 데이터와 평가 기준이 공개된 이후, 이 과제가 왜 단순 회귀 문제가 아니라 전력계통 운영, 예측 정산, 시간순 재현성, 도메인 제약이 결합된 문제인지 발표용으로 설명할 수 있게 정리하세요.
 
-Return in Korean:
-1. One-sentence problem definition.
-2. Why this is not just a generic regression problem.
-3. The three core technical challenges.
-4. The three operational/reproducibility challenges.
-5. Five slide titles with one key message each.
+[반드시 참고할 공식/로컬 자료]
+1. DACON 대회 개요: https://dacon.io/competitions/official/236727/overview/description
+2. DACON 평가: https://dacon.io/competitions/official/236727/overview/evaluation
+3. DACON 규칙: https://dacon.io/competitions/official/236727/overview/rules
+4. 첨부 로컬 문서가 있다면 우선 참고:
+   - docs/design/04-final-solution-blueprint.md
+   - llm-wiki/00-source-map.md
+   - llm-wiki/01-problem-definition.md
+   - llm-wiki/02-requirements.md
+   - llm-wiki/03-market-research.md
+
+[확정된 대회 맥락]
+- 과제: 2025년 평가 기간의 3개 KPX 그룹별 시간별 풍력 발전량 예측.
+- 입력: 학습 기간 LDAPS/GFS 기상 예보, train labels, VESTAS/UNISON 터빈 SCADA. 평가 기간은 LDAPS/GFS만 제공.
+- 핵심 제약: 평가 기간 SCADA는 없으므로 학습 기간 SCADA는 데이터 누수(leakage) 없이 파생 지식 또는 품질 검증 근거로만 활용해야 한다.
+- 공식 평가식: Score = 0.5 x 1-NMAE + 0.5 x FICR.
+- 평가는 실제 발전량이 설비용량의 10% 이상인 시간대만 대상으로 한다.
+- FICR는 nMAE 6% 이하, 6% 초과 8% 이하, 8% 초과 구간별 정산금 차등을 반영한다.
+- 2차 평가는 Private Score와 발표 평가가 결합되며, 발표 항목에는 과제 이해도, 기술 우수성, 문제 해결력, 적용 가능성, 발표 완성도가 포함된다.
+
+[조사 및 분석 지시]
+1. 한 문장 문제 정의를 작성하세요.
+2. 이 과제가 일반적인 표 형식 회귀(tabular regression)와 다른 이유를 5개 이하로 정리하세요.
+3. 발표 평가 항목과 연결되는 기술 서사를 구성하세요.
+4. 모델 성능뿐 아니라 제출 재현성과 운영 적용 가능성을 함께 설명하는 발표 흐름을 제안하세요.
+5. 발표 슬라이드 10분 분량의 제목과 각 슬라이드 핵심 메시지를 제안하세요.
+
+[주의사항]
+- 공식 사실과 발표용 해석을 분리하세요.
+- 과장된 시장성 또는 실무 적용성을 단정하지 마세요.
+- 공식 평가 지표인 FICR가 실제 KPX 제도와 완전히 동일하다고 단정하지 말고, "대회용 근사/모사 지표"인지 검증 관점으로 표현하세요.
+- 불확실하거나 출처가 약한 내용은 "재검증 필요"로 표시하세요.
+
+[출력 형식]
+반드시 아래 Markdown 형식으로만 한국어로 출력하세요.
+
+## Perplexity 세션 결과
+
+- 세션: P3-2 문제 정의와 발표 서사
+- 날짜:
+- 모드/모델:
+- 업로드 파일:
+
+### 1. 공식 사실
+| 항목 | 내용 | 출처 URL 또는 첨부 문서 | 발표 영향 |
+|---|---|---|---|
+
+### 2. 한 문장 문제 정의
+
+### 3. 일반 회귀 문제와 다른 점
+| 차별점 | 설명 | 발표에서 강조할 이유 |
+|---|---|---|
+
+### 4. 핵심 기술 과제
+| 과제 | 왜 어려운가 | 해결 방향 |
+|---|---|---|
+
+### 5. 운영/재현성 과제
+| 과제 | 실패 시 영향 | 대응 방향 |
+|---|---|---|
+
+### 6. 10분 발표 구성안
+| 슬라이드 | 제목 | 핵심 메시지 | 근거/시각화 아이디어 |
+|---|---|---|---|
+
+### 7. 발표에서 피해야 할 표현
+| 표현 | 문제점 | 안전한 대체 표현 |
+|---|---|---|
+
+### 8. 출처 목록
+| 번호 | 출처명 | URL | 신뢰도 |
+|---|---|---|---|
 ```
 
-## Session P3-3: 시장·제도 조사
+## Session P3-3: 시장 및 제도 조사
 
 ```text
-Research the Korean renewable energy generation forecasting system and wind power forecasting market context.
+당신은 DACON "제3회 풍력발전량 예측 AI 경진대회 - BARAM 2026" 프로젝트의 시장 및 제도 맥락을 조사하는 리서치 파트너입니다.
 
-Use official/institutional sources first:
-- MOTIE, KPX, KDI, KMA, IEA, NREL, academic reviews.
+[목표]
+한국 재생에너지 발전량 예측 제도와 풍력 발전량 예측 시장/정책 맥락을 조사하여, 대회 문제의 실무적 의미와 발표용 근거를 정리하세요.
 
-Return in Korean:
-1. Why day-ahead renewable generation forecasting matters for grid operation.
-2. How settlement/incentive systems connect forecast error to revenue.
-3. Whether wind forecasting has different difficulty or policy treatment from solar.
-4. How DACON's FICR metric relates to but may differ from the real system.
-5. Source-backed claims suitable for a 10-minute presentation.
+[반드시 참고할 공식/기관 자료]
+1. DACON 대회 개요: https://dacon.io/competitions/official/236727/overview/description
+2. DACON 평가: https://dacon.io/competitions/official/236727/overview/evaluation
+3. DACON 규칙: https://dacon.io/competitions/official/236727/overview/rules
+4. 산업부/KPX 제도 도입 보도 후보: https://eiec.kdi.re.kr/policy/materialView.do?num=205187
+5. KPX 전력시장운영규칙 후보: https://marketrule.kpx.or.kr
+6. 가능하면 우선 탐색할 기관: 산업통상자원부, KPX, KMA, KDI 경제정보센터, IEA, NREL, 전력거래소 공식 문서, 학술 리뷰 논문.
+7. 첨부 로컬 문서가 있다면 우선 참고:
+   - llm-wiki/00-source-map.md
+   - llm-wiki/03-market-research.md
+   - docs/design/04-final-solution-blueprint.md
 
-Mark uncertain or non-official information explicitly.
+[확정된 대회 맥락]
+- 대회는 기상 예보 데이터와 터빈 SCADA 실측 데이터를 활용한 KPX 그룹별 풍력 발전량 예측 과제다.
+- 공식 평가식은 1-NMAE와 FICR를 절반씩 결합한다.
+- FICR는 예측오차율 구간에 따른 정산금 획득률을 평가하지만, 실제 제도와 완전히 동일한지 여부는 별도 검증이 필요하다.
+- 발표 평가에는 실제 풍력발전량 예측 업무와 후속 연구에 활용 가능한 수준의 실용성이 포함된다.
+
+[조사 및 분석 지시]
+1. 하루 전 또는 단기 재생에너지 발전량 예측이 전력계통 운영에 중요한 이유를 공식/기관 출처 중심으로 정리하세요.
+2. 한국의 재생에너지 발전량 예측 제도에서 예측오차와 정산금/인센티브가 어떻게 연결되는지 조사하세요.
+3. 풍력 예측이 태양광 예측과 다른 난점이 있는지 조사하세요. 단, 제도상 차등이 있는지와 물리/모델링 난이도 차이를 분리하세요.
+4. DACON의 FICR 지표가 실제 제도를 반영하는 부분과 대회용으로 단순화되었을 가능성이 있는 부분을 분리하세요.
+5. 10분 발표에 넣을 수 있는 근거 문장과 출처를 제안하세요.
+
+[주의사항]
+- 공식 기관 출처를 최우선으로 사용하고, 기사/블로그/커뮤니티는 보조 근거로만 사용하세요.
+- 실제 제도 설명과 대회 평가 지표를 혼동하지 마세요.
+- 제도 변경 가능성이 있는 항목은 확인 날짜를 적고 재검증 필요로 표시하세요.
+- 불확실하거나 출처가 약한 내용은 "재검증 필요"로 표시하세요.
+
+[출력 형식]
+반드시 아래 Markdown 형식으로만 한국어로 출력하세요.
+
+## Perplexity 세션 결과
+
+- 세션: P3-3 시장 및 제도 조사
+- 날짜:
+- 모드/모델:
+- 업로드 파일:
+
+### 1. 공식/기관 근거 요약
+| 주제 | 핵심 내용 | 출처 URL | 발표 활용도 |
+|---|---|---|---|
+
+### 2. 전력계통 운영 관점의 중요성
+| 근거 | 설명 | 출처 | 대회 문제와의 연결 |
+|---|---|---|---|
+
+### 3. 예측오차와 정산/인센티브 연결
+| 제도 항목 | 내용 | 출처 | DACON FICR와의 관계 |
+|---|---|---|---|
+
+### 4. 풍력 예측의 특수성
+| 구분 | 풍력의 난점 | 태양광과의 차이 | 출처 |
+|---|---|---|---|
+
+### 5. DACON 지표 해석
+| 항목 | 실제 제도와 유사한 점 | 대회용 단순화 가능성 | 재검증 필요 여부 |
+|---|---|---|---|
+
+### 6. 발표용 근거 문장
+| 문장 | 사용할 슬라이드 | 근거 출처 | 주의 표현 |
+|---|---|---|---|
+
+### 7. 다음 Codex 반영 작업
+| 작업 | 반영 위치 | 우선순위 |
+|---|---|---|
+
+### 8. 출처 목록
+| 번호 | 출처명 | URL | 신뢰도 |
+|---|---|---|---|
 ```
 
 ## Session P3-4: 모델링 리서치
 
 ```text
-Research short-term wind power forecasting methods using NWP data and turbine SCADA.
+당신은 DACON "제3회 풍력발전량 예측 AI 경진대회 - BARAM 2026" 프로젝트의 모델링 리서치를 담당하는 파트너입니다.
 
-Competition constraints:
-- No remote inference APIs.
-- Evaluation period SCADA is unavailable.
-- Need point-in-time safe features.
-- Need reproducible local Python code.
+[목표]
+NWP 기반 풍력 발전량 단기 예측과 학습 기간 SCADA 활용 방식을 조사하여, 6주 안에 구현 가능한 모델링 전략과 검증 전략을 제안하세요.
 
-Return in Korean:
-1. Best practices for gridded NWP feature engineering.
-2. How to use train SCADA without leakage.
-3. Validation schemes for 2022-2024 train and 2025 hidden test.
-4. Calibration ideas for threshold-based FICR.
-5. Which methods are realistic for a 6-week competition.
-```
+[반드시 참고할 공식/로컬 자료]
+1. DACON 대회 개요: https://dacon.io/competitions/official/236727/overview/description
+2. DACON 평가: https://dacon.io/competitions/official/236727/overview/evaluation
+3. DACON 규칙: https://dacon.io/competitions/official/236727/overview/rules
+4. 첨부 로컬 문서가 있다면 우선 참고:
+   - docs/design/04-final-solution-blueprint.md
+   - llm-wiki/00-source-map.md
+   - llm-wiki/01-problem-definition.md
+   - llm-wiki/02-requirements.md
+   - llm-wiki/04-versioning-recovery.md
+5. 가능하면 참고할 외부 자료:
+   - NWP 후처리, 풍력 발전량 예측, SCADA 기반 터빈 성능곡선, 그래디언트 부스팅, 분위수/보정, 시계열 검증 관련 기관/학술 자료.
 
-## 반입 포맷
+[확정된 대회 맥락]
+- 학습 입력: LDAPS/GFS 예보 데이터, train labels, VESTAS/UNISON SCADA.
+- 평가 입력: LDAPS/GFS 예보 데이터만 제공.
+- 평가 기간 SCADA는 제공되지 않는다.
+- 공식 baseline은 RandomForest 계열로 이해되며, 다음 단계에서는 학습(train) 코드와 추론(inference) 코드를 분리해야 한다.
+- 공식 평가식: Score = 0.5 x 1-NMAE + 0.5 x FICR.
+- 평가는 실제 발전량이 설비용량의 10% 이상인 시간대만 대상으로 한다.
+- FICR는 nMAE 6%와 8% 임계값 부근의 예측 안정성에 민감하다.
+- 원격 추론(inference) API 기반 모델은 사용할 수 없고, Private Score 복원이 가능한 로컬 코드/모델이 필요하다.
 
-Perplexity 결과를 가져올 때는 아래 형식을 유지합니다.
+[조사 및 분석 지시]
+1. LDAPS/GFS 같은 격자형 NWP 데이터에서 풍력 발전량 예측에 유용한 피처 엔지니어링 방법을 조사하세요.
+2. 학습 기간 SCADA를 데이터 누수(leakage) 없이 활용하는 방법을 제안하세요. 예: 터빈 출력곡선(power curve), 품질 플래그, 그룹별 물리적 상한/하한, 후처리 기준.
+3. 2022-2024 학습 기간과 2025 숨김 평가 기간 구조를 고려한 검증 설계를 제안하세요.
+4. 1-NMAE와 FICR를 동시에 개선하기 위한 보정/후처리 아이디어를 제안하세요.
+5. 6주 대회 기간 안에 현실적으로 가능한 방법과 연구형으로만 남겨둘 방법을 분리하세요.
 
-```markdown
-## Perplexity Session Result
+[주의사항]
+- 평가 기간에 존재하지 않는 SCADA 피처를 추론 입력으로 쓰는 전략은 금지 또는 매우 위험한 후보로 표시하세요.
+- 시간 순서, 예보 발행 시점, 예측 선행시간(forecast lead)을 무시한 검증은 데이터 누수(leakage) 위험으로 표시하세요.
+- 최신 거대 모델이나 외부 API는 대회 규칙과 재현성 요구를 통과할 수 있는지 따로 검증하세요.
+- 공식 대회 기준과 논문 일반론이 충돌하면 공식 대회 기준을 우선하세요.
+- 불확실하거나 출처가 약한 내용은 "재검증 필요"로 표시하세요.
 
-- Session:
-- Date:
-- Mode/Model:
-- Uploaded files:
+[출력 형식]
+반드시 아래 Markdown 형식으로만 한국어로 출력하세요.
 
-### Official Facts
+## Perplexity 세션 결과
 
-### External Research Findings
+- 세션: P3-4 모델링 리서치
+- 날짜:
+- 모드/모델:
+- 업로드 파일:
 
-### Project Decisions To Update
+### 1. 공식 제약 요약
+| 제약 | 내용 | 출처 URL 또는 첨부 문서 | 모델링 영향 |
+|---|---|---|---|
 
-### Risks / Uncertainties
+### 2. NWP 피처 엔지니어링 후보
+| 후보 | 설명 | 기대 효과 | 구현 난이도 | leakage 위험 |
+|---|---|---|---|---|
 
-### Next Actions
+### 3. SCADA 활용 후보
+| 후보 | 학습에서의 활용 | 추론에서의 활용 가능성 | leakage 위험 | 권고 |
+|---|---|---|---|---|
+
+### 4. Validation 전략
+| 전략 | 장점 | 단점 | Private 복원성 | 권고 순위 |
+|---|---|---|---|---|
+
+### 5. FICR 최적화 및 후처리
+| 아이디어 | 1-NMAE 영향 | FICR 영향 | 검증 방법 | 리스크 |
+|---|---|---|---|---|
+
+### 6. 6주 구현 로드맵
+| 단계 | 방법 | 산출물 | 완료 기준 |
+|---|---|---|---|
+
+### 7. 연구 후보로만 둘 항목
+| 항목 | 이유 | 재검증 조건 |
+|---|---|---|
+
+### 8. 다음 Codex 반영 작업
+| 작업 | 반영 위치 | 우선순위 |
+|---|---|---|
+
+### 9. 출처 목록
+| 번호 | 출처명 | URL | 신뢰도 |
+|---|---|---|---|
 ```
