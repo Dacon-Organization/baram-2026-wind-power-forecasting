@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BARAM 최종 설계서</title>
+<style>
+  body { margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; background: #0f1115; color: #e6e9ef; line-height: 1.65; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 36px 20px 64px; }
+  a { color: #58a6ff; }
+  h1 { margin: 0 0 6px; font-size: 1.7rem; }
+  h2 { color: #58a6ff; font-size: 1.05rem; margin-top: 28px; }
+  .sub { color: #8b93a7; margin-bottom: 24px; }
+  .panel { background: #1a1d24; border: 1px solid #2a2f3a; border-radius: 12px; padding: 16px 20px; }
+  li { margin: 6px 0; }
+  code { background: #0b0d11; padding: 1px 6px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>공식 데이터·평가식·Baseline 반영 최종 설계</h1>
+  <div class="sub">2026-07-06 KST · docs/baram-final-design</div>
+  <div class="panel">
+    <h2>완료</h2>
+    <ul>
+      <li><code>open/</code> 배포 데이터의 파일 구조, 행 수, 컬럼, grid 수, lead hour, label 품질을 확인했다.</li>
+      <li>공식 <code>평가_산식 코드.ipynb</code>의 1-NMAE, FICR, total score 계산식을 최종 설계 기준으로 승격했다.</li>
+      <li>공식 <code>baseline.ipynb</code>의 RandomForest 구조와 한계를 정리하고, 후속 GBM·피처·보정 로드맵을 설계했다.</li>
+      <li>3조 분석 노트북과 Short Research Paper의 Decision Box, 품질 진단, robustness, 발표 서사를 BARAM 노트북·발표 구조에 융합했다.</li>
+      <li><a href="../../../docs/design/04-final-solution-blueprint.md">최종 설계서</a>, 문서 인덱스, README 진행 현황을 갱신했다.</li>
+    </ul>
+    <h2>검증</h2>
+    <ul>
+      <li>CSV/XLSX/노트북/DOCX를 로컬에서 직접 읽어 데이터 구조와 참고 문서 구성을 확인했다.</li>
+      <li>LDAPS는 시각당 16개 grid, GFS는 시각당 9개 grid이며 forecast lead가 12~35시간임을 확인했다.</li>
+      <li>평가 코드는 actual 10% capacity 이상 구간만 평가하고, error rate 6%/8% 기준으로 FICR 단가를 적용함을 확인했다.</li>
+    </ul>
+    <h2>다음</h2>
+    <ul>
+      <li><code>src/baram/metrics.py</code>와 <code>01_metric_reproduction.ipynb</code>를 작성해 공식 평가 산식을 먼저 재현한다.</li>
+      <li>그 다음 공식 RandomForest baseline을 train/inference 분리 구조로 옮긴다.</li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>
