@@ -3,6 +3,17 @@
 > 현재 Codex 세션에는 Perplexity 커넥터가 없으므로, 아래 프롬프트를 사용자가 Perplexity Space에서 직접 실행하거나 다음 세션에서 결과를 반입한다.
 > 모든 프롬프트는 한국어 완결형이다. 공통 양식을 따로 import하지 않고, 각 프롬프트 안에 참고 자료, 확정 맥락, 주의사항, 출력 형식을 모두 포함했다.
 
+## 실행 결과
+
+2026-07-06 KST 기준 P3-1~P3-4 결과를 `llm-wiki/research/`에 반입했습니다.
+
+| 세션 | 결과 파일 |
+|------|-----------|
+| P3-1 요구사항 정의 재검증 | [2026-07-06-p3-1-requirements-revalidation.md](research/2026-07-06-p3-1-requirements-revalidation.md) |
+| P3-2 문제 정의와 발표 서사 | [2026-07-06-p3-2-problem-narrative.md](research/2026-07-06-p3-2-problem-narrative.md) |
+| P3-3 시장 및 제도 조사 | [2026-07-06-p3-3-market-policy.md](research/2026-07-06-p3-3-market-policy.md) |
+| P3-4 모델링 리서치 | [2026-07-06-p3-4-modeling-research.md](research/2026-07-06-p3-4-modeling-research.md) |
+
 ## 실행 원칙
 
 - 권장 실행 순서: P3-1 -> P3-2 -> P3-3 -> P3-4

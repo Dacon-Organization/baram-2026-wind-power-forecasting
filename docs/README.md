@@ -29,6 +29,7 @@
 | [03-operations-master-plan.md](design/03-operations-master-plan.md) | 작성 완료 | 공식 데이터 공개 전 제출 운영, 실험 추적, 외부 데이터 보류, 2차 검증 준비 계획 |
 | [04-final-solution-blueprint.md](design/04-final-solution-blueprint.md) | 작성 완료 | 공식 데이터·평가 코드·baseline 공개 후 최종 데이터 분석, 모델링, 발표 산출물 설계 |
 | [LLM Wiki](../llm-wiki/README.md) | 작성 완료 | 공식 데이터 미러, official notebook, 요구사항, 문제 정의, 시장 조사, 제출 복구, Perplexity 브리프, handoff |
+| [P3 Perplexity 리서치 원문](../llm-wiki/research/README.md) | 작성 완료 | 요구사항 재검증, 발표 서사, 시장·제도 조사, 모델링 리서치 결과 원문 |
 
 ## 다음 문서 후보
 
