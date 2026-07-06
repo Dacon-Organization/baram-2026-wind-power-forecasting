@@ -26,12 +26,14 @@
       <li><code>notebooks/01_metric_reproduction.ipynb</code>를 새로 추가해 누락된 01 분석 단계를 복구했습니다.</li>
       <li>공식 metric oracle과 <code>src/baram/metrics.py</code> 포팅 함수의 결과 일치, edge case, FICR 경계, valid mask를 표와 시각화로 정리했습니다.</li>
       <li>label 결측, capacity 초과, 공식 valid 후보, CSV inventory, weather grid coverage, forecast lead를 함께 감사했습니다.</li>
-      <li><code>notebooks/02_official_baseline_reproduction.ipynb</code>의 깨진 한글을 복원하고 baseline 진단 시각화를 추가했습니다.</li>
+      <li>마크다운 표가 코드블록으로 렌더링되던 들여쓰기 문제를 복구하고, 각 표·그림 뒤에 관찰·해석·다음 판단 문단을 추가했습니다.</li>
+      <li><code>notebooks/02_official_baseline_reproduction.ipynb</code>의 깨진 한글을 복원하고 baseline 진단 시각화와 결과 해석 문단을 추가했습니다.</li>
     </ul>
     <h2>검증</h2>
     <ul>
       <li><code>nbclient</code>로 01, 02 노트북 전체를 재실행했습니다.</li>
       <li>01 노트북에 6개, 02 노트북에 1개의 시각화 출력이 저장된 것을 확인했습니다.</li>
+      <li>마크다운 table 들여쓰기 0건, replacement 문자 0건, 01 노트북 해석 셀 19개를 확인했습니다.</li>
       <li><code>python -m pytest</code>, <code>git diff --check</code>, <code>git diff --cached --check</code>로 검증했습니다.</li>
       <li>제출 CSV, 모델 파일, <code>outputs/</code>, <code>submissions/</code>, <code>models/</code> 산출물은 생성하지 않았습니다.</li>
     </ul>
