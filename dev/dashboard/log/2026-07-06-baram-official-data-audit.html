@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BARAM 공식 데이터 감사 노트북</title>
+<style>
+  body { margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; background: #0f1115; color: #e6e9ef; line-height: 1.65; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 36px 20px 64px; }
+  a { color: #58a6ff; }
+  h1 { margin: 0 0 6px; font-size: 1.7rem; }
+  h2 { color: #58a6ff; font-size: 1.05rem; margin-top: 28px; }
+  .sub { color: #8b93a7; margin-bottom: 24px; }
+  .panel { background: #1a1d24; border: 1px solid #2a2f3a; border-radius: 12px; padding: 16px 20px; }
+  li { margin: 6px 0; }
+  code { background: #0b0d11; padding: 1px 6px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>공식 데이터 감사 노트북 작성</h1>
+  <div class="sub">2026-07-06 KST · docs/baram-official-data-audit</div>
+  <div class="panel">
+    <h2>완료</h2>
+    <ul>
+      <li><code>notebooks/00_official_data_audit.ipynb</code> 생성.</li>
+      <li>MANIFEST SHA256, data_description 대비 파일/컬럼/기간, LDAPS/GFS grid coverage와 forecast lead, label 결측·capacity·10% valid 후보, sample submission schema를 감사.</li>
+      <li>SCADA VESTAS/UNISON의 10분 시간축, 결측, power/ws/wd 범위와 <code>info.xlsx</code>의 KPX 그룹·터빈·용량·좌표·허브높이·로터직경을 점검.</li>
+      <li>표/시각화 뒤에 풍력예측, NWP forecast lead, SCADA/power curve, 시계열 validation, FICR, 데이터 품질 감사 관점의 관찰·해석·다음 판단을 기록.</li>
+      <li>Decision Box에 원본 데이터 stage 금지, Group 3 결측 처리, capacity 초과 actual 처리, weather imputation 후보, SCADA leakage 금지, cutoff 검증 필요를 정리.</li>
+    </ul>
+    <h2>검증</h2>
+    <ul>
+      <li><code>NotebookClient</code>로 <code>00_official_data_audit.ipynb</code> 전체 실행 완료.</li>
+      <li>노트북 출력 22개, PNG 시각화 8개, 실행 error 0개 확인.</li>
+      <li>replacement 문자 <code>U+FFFD</code> 0건 확인.</li>
+      <li>마크다운 table이 코드블록으로 들어간 셀 0건 확인.</li>
+      <li><code>python -m pytest</code>: 4 passed.</li>
+      <li><code>git diff --check</code>: 통과.</li>
+    </ul>
+    <h2>다음</h2>
+    <ul>
+      <li>Baseline RandomForest train/inference 분리.</li>
+      <li>이때 이번 감사의 Decision Box를 기준으로 cutoff, Group 3 mask, LDAPS test 결측 보정, 제출 template 고정 여부를 코드화.</li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>
