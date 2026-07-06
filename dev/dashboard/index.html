@@ -46,8 +46,8 @@
   </div>
 
   <h2>전체 진척률</h2>
-  <div class="bar"><i style="width:65%"></i></div>
-  <div class="barlabel">공식 데이터 공개 후 전략·데이터·운영 설계를 재정렬. PRD, 데이터·모델링 설계서, Perplexity synthesis, 운영 마스터플랜, 공식 데이터·평가식·baseline 반영 최종 설계 완료.</div>
+  <div class="bar"><i style="width:70%"></i></div>
+  <div class="barlabel">공식 데이터 공개 후 전략·데이터·운영 설계를 재정렬. 최종 설계와 함께 공식 데이터 로컬 미러, baseline/평가 코드 참조, LLM Wiki, 제출 복구 규칙, 새 세션 handoff까지 준비.</div>
 
   <h2>마일스톤 파이프라인</h2>
   <ul class="pipeline">
@@ -59,12 +59,18 @@
     <li><span class="tag t-done">DONE</span><div>Perplexity 2차 재검증 결과 반입 — R2-1~R2-6 설계 반영 결정 정리</div></li>
     <li><span class="tag t-done">DONE</span><div>운영 마스터플랜 — 제출 운영, 실험 추적, 외부 데이터 보류, 2차 검증 준비</div></li>
     <li><span class="tag t-done">DONE</span><div>공식 데이터·평가 산식·LDAPS/GFS 메타데이터·baseline 구조 반영 최종 설계</div></li>
+    <li><span class="tag t-done">DONE</span><div>공식 자료 로컬 미러·LLM Wiki·제출 복구 규칙·새 세션 handoff 정리</div></li>
     <li><span class="tag t-progress">NEXT</span><div>평가 산식 재현 코드와 metric 노트북 작성</div></li>
     <li><span class="tag t-todo">TODO</span><div>베이스라인 RandomForest train/inference 분리</div></li>
   </ul>
 
   <h2>작업 로그</h2>
   <div class="cards">
+    <a class="card" href="log/2026-07-06-baram-llm-wiki-bootstrap.html">
+      <div class="date">2026-07-06 (KST) · docs/baram-final-design</div>
+      <div class="title">공식 자료 로컬 미러와 LLM Wiki 구조 정리</div>
+      <div class="summary">공식 데이터는 로컬 data/raw/open에 복사하고 raw 파일은 Git 미추적으로 보호. manifest에 SHA256을 기록하고, baseline/평가 노트북을 references에 보관. llm-wiki에 source map, 문제 정의, 요구사항, 시장 조사, 제출 복구, Perplexity 브리프, 새 세션 handoff를 작성.</div>
+    </a>
     <a class="card" href="log/2026-07-06-baram-final-solution-blueprint.html">
       <div class="date">2026-07-06 (KST) · docs/baram-final-design</div>
       <div class="title">공식 데이터·평가식·Baseline 반영 최종 설계</div>
