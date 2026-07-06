@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BARAM 공식 Baseline 재현 분석 노트북</title>
+<style>
+  body { margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; background: #0f1115; color: #e6e9ef; line-height: 1.65; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 36px 20px 64px; }
+  a { color: #58a6ff; }
+  h1 { margin: 0 0 6px; font-size: 1.7rem; }
+  h2 { color: #58a6ff; font-size: 1.05rem; margin-top: 28px; }
+  .sub { color: #8b93a7; margin-bottom: 24px; }
+  .panel { background: #1a1d24; border: 1px solid #2a2f3a; border-radius: 12px; padding: 16px 20px; }
+  li { margin: 6px 0; }
+  code { background: #0b0d11; padding: 1px 6px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>공식 Baseline 재현 분석 노트북</h1>
+  <div class="sub">2026-07-06 KST · feature/baram/baseline-notebook</div>
+  <div class="panel">
+    <h2>완료</h2>
+    <ul>
+      <li><code>notebooks/02_official_baseline_reproduction.ipynb</code>를 작성하고 실행 결과를 저장했습니다.</li>
+      <li>공식 baseline의 LDAPS/GFS 격자 평균, calendar feature, target별 RandomForest 구조를 재현했습니다.</li>
+      <li>2024 time holdout 기준 local score와 target별 진단표를 남겼습니다.</li>
+      <li>Decision Box로 분석 형식, validation 방식, baseline 유지/제외 항목을 기록했습니다.</li>
+    </ul>
+    <h2>검증</h2>
+    <ul>
+      <li>노트북 전체를 <code>nbclient</code>로 실행했습니다.</li>
+      <li>2024 holdout 결과: <code>total_score=0.576938</code>, <code>one_minus_nmae=0.863228</code>, <code>ficr=0.290647</code>.</li>
+      <li><code>baseline_submit.csv</code>, 모델 파일, <code>outputs/</code>, <code>submissions/</code>, <code>models/</code> 산출물이 생성되지 않았음을 확인했습니다.</li>
+    </ul>
+    <h2>다음</h2>
+    <ul>
+      <li>공식 baseline train/inference 분리와 config/seed/submission ledger 연결 설계</li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>
