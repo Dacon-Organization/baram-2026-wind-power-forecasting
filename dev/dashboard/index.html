@@ -46,8 +46,8 @@
   </div>
 
   <h2>전체 진척률</h2>
-  <div class="bar"><i style="width:80%"></i></div>
-  <div class="barlabel">공식 데이터 공개 후 전략·데이터·운영 설계를 재정렬. 공식 데이터 로컬 미러, baseline/평가 코드 참조, LLM Wiki, 제출 복구 규칙, Perplexity P3 리서치 반입, 공식 평가 산식 재현 모듈과 테스트까지 완료.</div>
+  <div class="bar"><i style="width:82%"></i></div>
+  <div class="barlabel">공식 데이터 공개 후 전략·데이터·운영 설계를 재정렬. 공식 데이터 로컬 미러, baseline/평가 코드 참조, LLM Wiki, 제출 복구 규칙, Perplexity P3 리서치 반입, 공식 평가 산식 재현, 공식 baseline 재현 분석 노트북까지 완료.</div>
 
   <h2>마일스톤 파이프라인</h2>
   <ul class="pipeline">
@@ -63,11 +63,17 @@
     <li><span class="tag t-done">DONE</span><div>Perplexity P3-1~P3-4 한국어 완결 프롬프트와 결과 반입용 handoff 갱신</div></li>
     <li><span class="tag t-done">DONE</span><div>Perplexity P3-1~P3-4 리서치 결과 원문 반입과 LLM Wiki 색인 갱신</div></li>
     <li><span class="tag t-done">DONE</span><div>공식 평가 산식 재현 코드와 단위 테스트 작성</div></li>
+    <li><span class="tag t-done">DONE</span><div>공식 Baseline 재현 분석 노트북 작성</div></li>
     <li><span class="tag t-progress">NEXT</span><div>베이스라인 RandomForest train/inference 분리</div></li>
   </ul>
 
   <h2>작업 로그</h2>
   <div class="cards">
+    <a class="card" href="log/2026-07-06-baram-baseline-notebook.html">
+      <div class="date">2026-07-06 (KST) · feature/baram/baseline-notebook</div>
+      <div class="title">공식 Baseline 재현 분석 노트북</div>
+      <div class="summary">공식 baseline의 LDAPS/GFS 격자 평균, calendar feature, target별 RandomForest 구조를 notebooks/02_official_baseline_reproduction.ipynb에 재현. 2024 time holdout 기준 local score와 target별 진단표, Decision Box를 저장하고 제출 CSV·모델 산출물은 생성하지 않음.</div>
+    </a>
     <a class="card" href="log/2026-07-06-baram-metric-reproduction.html">
       <div class="date">2026-07-06 (KST) · feature/baram/metric-reproduction</div>
       <div class="title">공식 평가 산식 재현</div>
