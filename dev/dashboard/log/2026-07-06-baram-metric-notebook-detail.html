@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BARAM metric 재현 분석 노트북 보강</title>
+<style>
+  body { margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; background: #0f1115; color: #e6e9ef; line-height: 1.65; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 36px 20px 64px; }
+  a { color: #58a6ff; }
+  h1 { margin: 0 0 6px; font-size: 1.7rem; }
+  h2 { color: #58a6ff; font-size: 1.05rem; margin-top: 28px; }
+  .sub { color: #8b93a7; margin-bottom: 24px; }
+  .panel { background: #1a1d24; border: 1px solid #2a2f3a; border-radius: 12px; padding: 16px 20px; }
+  li { margin: 6px 0; }
+  code { background: #0b0d11; padding: 1px 6px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>metric 재현 분석 노트북 보강</h1>
+  <div class="sub">2026-07-06 KST · feature/baram/metric-notebook-detail</div>
+  <div class="panel">
+    <h2>완료</h2>
+    <ul>
+      <li><code>notebooks/01_metric_reproduction.ipynb</code>를 새로 추가해 누락된 01 분석 단계를 복구했습니다.</li>
+      <li>공식 metric oracle과 <code>src/baram/metrics.py</code> 포팅 함수의 결과 일치, edge case, FICR 경계, valid mask를 표와 시각화로 정리했습니다.</li>
+      <li>label 결측, capacity 초과, 공식 valid 후보, CSV inventory, weather grid coverage, forecast lead를 함께 감사했습니다.</li>
+      <li><code>notebooks/02_official_baseline_reproduction.ipynb</code>의 깨진 한글을 복원하고 baseline 진단 시각화를 추가했습니다.</li>
+    </ul>
+    <h2>검증</h2>
+    <ul>
+      <li><code>nbclient</code>로 01, 02 노트북 전체를 재실행했습니다.</li>
+      <li>01 노트북에 6개, 02 노트북에 1개의 시각화 출력이 저장된 것을 확인했습니다.</li>
+      <li><code>python -m pytest</code>, <code>git diff --check</code>, <code>git diff --cached --check</code>로 검증했습니다.</li>
+      <li>제출 CSV, 모델 파일, <code>outputs/</code>, <code>submissions/</code>, <code>models/</code> 산출물은 생성하지 않았습니다.</li>
+    </ul>
+    <h2>다음</h2>
+    <ul>
+      <li><code>00_official_data_audit.ipynb</code>로 weather/SCADA/info.xlsx를 더 깊게 감사</li>
+      <li>또는 공식 baseline train/inference 분리와 config/seed/submission ledger 연결 설계</li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>
