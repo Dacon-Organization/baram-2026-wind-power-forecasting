@@ -46,8 +46,8 @@
   </div>
 
   <h2>전체 진척률</h2>
-  <div class="bar"><i style="width:55%"></i></div>
-  <div class="barlabel">공식 데이터 공개 전 전략·데이터·운영 설계 단계. PRD, 데이터·모델링 설계서, Perplexity 1회차 synthesis, 2차 질문 패키지, 2차 결과 반입, 운영 마스터플랜 완료.</div>
+  <div class="bar"><i style="width:65%"></i></div>
+  <div class="barlabel">공식 데이터 공개 후 전략·데이터·운영 설계를 재정렬. PRD, 데이터·모델링 설계서, Perplexity synthesis, 운영 마스터플랜, 공식 데이터·평가식·baseline 반영 최종 설계 완료.</div>
 
   <h2>마일스톤 파이프라인</h2>
   <ul class="pipeline">
@@ -58,12 +58,18 @@
     <li><span class="tag t-done">DONE</span><div>Perplexity 2차 재검증 질문 패키지 — R2-1~R2-6 세션별 프롬프트 작성</div></li>
     <li><span class="tag t-done">DONE</span><div>Perplexity 2차 재검증 결과 반입 — R2-1~R2-6 설계 반영 결정 정리</div></li>
     <li><span class="tag t-done">DONE</span><div>운영 마스터플랜 — 제출 운영, 실험 추적, 외부 데이터 보류, 2차 검증 준비</div></li>
-    <li><span class="tag t-progress">NEXT</span><div>공식 데이터 공개 후 스키마·평가 산식·LDAPS/GFS 메타데이터 재검증</div></li>
-    <li><span class="tag t-todo">TODO</span><div>베이스라인 파이프라인과 metric 재현</div></li>
+    <li><span class="tag t-done">DONE</span><div>공식 데이터·평가 산식·LDAPS/GFS 메타데이터·baseline 구조 반영 최종 설계</div></li>
+    <li><span class="tag t-progress">NEXT</span><div>평가 산식 재현 코드와 metric 노트북 작성</div></li>
+    <li><span class="tag t-todo">TODO</span><div>베이스라인 RandomForest train/inference 분리</div></li>
   </ul>
 
   <h2>작업 로그</h2>
   <div class="cards">
+    <a class="card" href="log/2026-07-06-baram-final-solution-blueprint.html">
+      <div class="date">2026-07-06 (KST) · docs/baram-final-design</div>
+      <div class="title">공식 데이터·평가식·Baseline 반영 최종 설계</div>
+      <div class="summary">배포 데이터의 파일 구조, 행 수, grid 수, forecast lead, label 품질을 확인하고 공식 평가 코드의 1-NMAE/FICR 산식을 기준으로 승격. baseline RandomForest의 유지·개선 지점을 정리하고, 3조 분석 노트북과 데이터분석 강의 노트북의 Decision Box·EDA·발표 서사를 융합한 최종 설계서를 작성.</div>
+    </a>
     <a class="card" href="log/2026-06-28-baram-operations-master-plan.html">
       <div class="date">2026-06-28 (KST) · docs/baram/operations-master-plan</div>
       <div class="title">운영 마스터플랜 작성</div>
