@@ -40,6 +40,9 @@
 3. **운영 마스터플랜**
    제출 일정, 리더보드 운영, 산출물 재현성, 2차 발표 준비, 역할 분담을 관리합니다.
 
+4. **LLM Wiki와 공식 자료 미러**
+   공식 데이터·baseline·평가 코드의 로컬 위치, hash, 요구사항, 문제 정의, 시장 조사, 제출 복구 규칙을 LLM이 바로 읽을 수 있게 정리합니다.
+
 ---
 
 ## 3. 핵심 데이터 팩트
@@ -58,9 +61,10 @@
 | 평가 기상 데이터 | 확정 | 2025 LDAPS, GFS |
 | 평가 SCADA/KPX label | 확정 | 제공되지 않음 |
 | 예측 기준시점 | 확정 | D-1 14:00 KST |
-| 예보 리드타임 | 워크숍 근거 | 00UTC 기준 `h016~h039` 제공으로 판독 |
+| 예보 리드타임 | 확정 | 공식 파일 `data_available_kst_dtm` 기준 12~35시간 |
 
-상세 근거표는 [전략 PRD](docs/groundwork/01-strategy-prd.md)의 `데이터 팩트 레저` 섹션을 기준으로 합니다.
+상세 근거표는 [전략 PRD](docs/groundwork/01-strategy-prd.md)와
+[최종 설계서](docs/design/04-final-solution-blueprint.md)를 기준으로 합니다.
 
 ---
 
@@ -69,6 +73,11 @@
 ```
 2026-BARAM-Wind-Power-Prediction-AI-Competition/
 ├── README.md
+├── data/
+│   └── raw/
+│       └── open/
+│           ├── README.md
+│           └── MANIFEST.md      # 원본 데이터 hash. 실제 CSV/XLSX는 Git 미추적
 ├── docs/
 │   ├── README.md
 │   ├── groundwork/
@@ -76,7 +85,23 @@
 │   └── design/
 │       ├── README.md
 │       ├── 02-data-modeling-spec.md
-│       └── 03-operations-master-plan.md
+│       ├── 03-operations-master-plan.md
+│       └── 04-final-solution-blueprint.md
+├── llm-wiki/
+│   ├── README.md
+│   ├── 00-source-map.md
+│   ├── 01-problem-definition.md
+│   ├── 02-requirements.md
+│   ├── 03-market-research.md
+│   ├── 04-versioning-recovery.md
+│   ├── 90-perplexity-research-brief.md
+│   └── 99-session-handoff/
+├── references/
+│   └── official/
+│       ├── README.md
+│       └── notebooks/
+│           ├── baseline.ipynb
+│           └── evaluation_metric.ipynb
 └── dev/
     └── dashboard/
         ├── index.html
@@ -95,6 +120,7 @@
 - [x] Perplexity 2차 재검증 결과 반입
 - [x] 운영 마스터플랜 작성
 - [x] 공식 데이터·평가 산식·baseline 반영 최종 설계
+- [x] 공식 데이터 로컬 미러·baseline/평가 코드 참조·LLM Wiki 구조 정리
 - [ ] 평가 산식 재현 코드와 metric 노트북 작성
 - [ ] 베이스라인 재현 파이프라인 구축
 - [ ] 제출/검증 자동화 구축

@@ -1,0 +1,18 @@
+# Official competition raw package copied locally for BARAM work only.
+# Do not commit raw CSV/XLSX/official package contents; keep hashes and notes instead.
+data/raw/open/**
+!data/raw/open/
+!data/raw/open/README.md
+!data/raw/open/MANIFEST.md
+
+# Generated outputs, models, submissions, and run artifacts.
+outputs/**
+submissions/**
+models/**
+reports/figures/**
+!outputs/
+!submissions/
+!models/
+!reports/
+!reports/figures/
+!**/.gitkeep

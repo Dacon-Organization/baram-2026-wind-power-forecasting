@@ -8,6 +8,7 @@
 |------|------|
 | `groundwork/` | 사전 워크숍, 공식 안내, 시장/제도 맥락 기반 전략 문서 |
 | `design/` | 데이터·모델링·실험·운영 설계 문서 |
+| `../llm-wiki/` | 다음 세션 LLM이 바로 읽을 수 있는 source map, 문제 정의, 요구사항, 시장 조사, 복구 규칙, handoff |
 
 ## 작성 원칙
 
@@ -27,6 +28,7 @@
 | [02-data-modeling-spec.md](design/02-data-modeling-spec.md) | 작성 완료 | 스키마 검증, cutoff, 피처, validation, metric, Perplexity 운영 설계 |
 | [03-operations-master-plan.md](design/03-operations-master-plan.md) | 작성 완료 | 공식 데이터 공개 전 제출 운영, 실험 추적, 외부 데이터 보류, 2차 검증 준비 계획 |
 | [04-final-solution-blueprint.md](design/04-final-solution-blueprint.md) | 작성 완료 | 공식 데이터·평가 코드·baseline 공개 후 최종 데이터 분석, 모델링, 발표 산출물 설계 |
+| [LLM Wiki](../llm-wiki/README.md) | 작성 완료 | 공식 데이터 미러, official notebook, 요구사항, 문제 정의, 시장 조사, 제출 복구, Perplexity 브리프, handoff |
 
 ## 다음 문서 후보
 
