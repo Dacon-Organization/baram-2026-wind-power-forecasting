@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BARAM 03 notebook markdown fix</title>
+<style>
+  body { margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; background: #0f1115; color: #e6e9ef; line-height: 1.65; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 36px 20px 64px; }
+  a { color: #58a6ff; }
+  h1 { margin: 0 0 6px; font-size: 1.7rem; }
+  h2 { color: #58a6ff; font-size: 1.05rem; margin-top: 28px; }
+  .sub { color: #8b93a7; margin-bottom: 24px; }
+  .panel { background: #1a1d24; border: 1px solid #2a2f3a; border-radius: 12px; padding: 16px 20px; }
+  li { margin: 6px 0; }
+  code { background: #0b0d11; padding: 1px 6px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>03 재현성 노트북 마크다운 복구</h1>
+  <div class="sub">2026-07-07 KST · docs/baram-03-notebook-markdown-fix</div>
+  <div class="panel">
+    <h2>완료</h2>
+    <ul>
+      <li><code>notebooks/03_reproducible_submission_ledger.ipynb</code>의 손상된 한국어 마크다운을 복구하고 실행 완료 상태로 다시 저장.</li>
+      <li>03 작업과 연결된 기존 대시보드 로그 <code>2026-07-07-baram-reproducible-submission-ledger.html</code>의 인코딩 손상 문구를 정상 한국어로 복구.</li>
+      <li>대시보드 index에 이번 복구 작업 카드를 추가해 추적성을 남김.</li>
+    </ul>
+    <h2>검증</h2>
+    <ul>
+      <li>03 노트북 source 검사: replacement 문자 0개, triple-question 패턴 0개.</li>
+      <li>03 노트북 실행 검사: 코드 셀 7개 모두 실행 완료, error output 없음.</li>
+      <li>대시보드 HTML 검사: replacement 문자 0개, triple-question 패턴 0개.</li>
+      <li><code>pytest -q</code> 통과.</li>
+    </ul>
+    <h2>다음</h2>
+    <ul>
+      <li>다음 작업 후보군은 모델 저장 metadata/run registry, 실제 데이터 smoke test, local validation split 강화 순으로 검토.</li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>

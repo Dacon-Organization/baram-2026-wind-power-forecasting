@@ -26,15 +26,15 @@
       <li><code>src/baram/reproducibility.py</code>를 추가해 baseline 실행 설정, seed 고정, stable JSON SHA256, submission CSV SHA256, ledger row 생성을 분리.</li>
       <li><code>BaselineRunConfig</code>가 <code>random_state</code>를 seed로 강제 주입하고, model params 키 순서와 무관한 config hash를 생성하도록 구현.</li>
       <li><code>run_baseline_with_reproducibility</code>가 기존 <code>baram.baseline.run_train_inference</code>를 파일 쓰기 없이 실행하고 ledger entry를 반환하도록 연결.</li>
-      <li><code>verify_baseline_inference_reproducibility</code>가 같은 입력/설정 반복 실행의 submission SHA256 일치 여부를 보고하도록 구현.</li>
+      <li><code>verify_baseline_inference_reproducibility</code>가 같은 입력과 설정의 반복 실행에서 submission SHA256 일치 여부를 보고하도록 구현.</li>
       <li><code>notebooks/03_reproducible_submission_ledger.ipynb</code>를 추가해 재현성 계약, synthetic smoke 설계, config hash, canonical CSV bytes, ledger row, 반복 inference 결과를 전문가 방법론과 해석 문단으로 기록.</li>
     </ul>
     <h2>검증</h2>
     <ul>
       <li>TDD RED: <code>pytest tests/test_reproducibility.py -q</code>에서 <code>baram.reproducibility</code> 모듈 부재로 실패 확인.</li>
-      <li>Focused GREEN: <code>pytest tests/test_reproducibility.py -q</code> → 9 passed.</li>
-      <li>Regression: <code>pytest -q</code> → 20 passed.</li>
-      <li>Notebook execution: <code>03_reproducible_submission_ledger.ipynb</code>의 코드 셀 7개 실행 완료, 내부 pytest focused/full 검증 통과.</li>
+      <li>Focused GREEN: <code>pytest tests/test_reproducibility.py -q</code> 통과.</li>
+      <li>Regression: <code>pytest -q</code> 통과.</li>
+      <li>Notebook execution: <code>03_reproducible_submission_ledger.ipynb</code> 코드 셀 7개 실행 완료, 내부 pytest focused/full 검증 통과.</li>
       <li>synthetic weather/label/sample 입력으로 ledger 생성, 무파일쓰기, 2회 반복 inference SHA256 동일성, canonical CSV bytes, filename safety, ledger DataFrame 컬럼 순서를 확인.</li>
     </ul>
     <h2>다음</h2>
