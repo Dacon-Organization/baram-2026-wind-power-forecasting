@@ -46,8 +46,8 @@
   </div>
 
   <h2>전체 진척률</h2>
-  <div class="bar"><i style="width:88%"></i></div>
-  <div class="barlabel">공식 데이터 공개 후 전략·데이터·운영 설계를 재정렬. 공식 데이터 로컬 미러, baseline/평가 코드 참조, LLM Wiki, 제출 복구 규칙, Perplexity P3 리서치 반입, 공식 평가 산식 재현, 01 metric 상세 분석 노트북, 공식 baseline 재현 분석 노트북, 00 공식 데이터 감사 노트북까지 완료.</div>
+  <div class="bar"><i style="width:91%"></i></div>
+  <div class="barlabel">공식 데이터 공개 후 전략·데이터·운영 설계를 재정렬. 공식 데이터 로컬 미러, baseline/평가 코드 참조, LLM Wiki, 제출 복구 규칙, Perplexity P3 리서치 반입, 공식 평가 산식 재현, 01 metric 상세 분석 노트북, 공식 baseline 재현 분석 노트북, 00 공식 데이터 감사 노트북, baseline RandomForest train/inference 분리까지 완료.</div>
 
   <h2>마일스톤 파이프라인</h2>
   <ul class="pipeline">
@@ -66,11 +66,17 @@
     <li><span class="tag t-done">DONE</span><div>공식 metric 재현 상세 분석 노트북과 시각화 보강</div></li>
     <li><span class="tag t-done">DONE</span><div>공식 Baseline 재현 분석 노트북 작성</div></li>
     <li><span class="tag t-done">DONE</span><div>공식 데이터 전체 감사 노트북 작성 — MANIFEST, NWP, label, SCADA, info, submission 품질 기준 고정</div></li>
-    <li><span class="tag t-progress">NEXT</span><div>베이스라인 RandomForest train/inference 분리</div></li>
+    <li><span class="tag t-done">DONE</span><div>베이스라인 RandomForest train/inference 분리 — cutoff, target mask, imputation, template 고정 코드화</div></li>
+    <li><span class="tag t-progress">NEXT</span><div>config/seed/submission ledger와 inference 재현성 검증 연결</div></li>
   </ul>
 
   <h2>작업 로그</h2>
   <div class="cards">
+    <a class="card" href="log/2026-07-07-baram-baseline-train-inference.html">
+      <div class="date">2026-07-07 (KST) · feature/baram/baseline-train-inference</div>
+      <div class="title">Baseline RandomForest train/inference 분리</div>
+      <div class="summary">공식 baseline의 LDAPS/GFS grid 평균 feature, forecast lead, calendar feature, target별 RandomForest 학습, inference, sample_submission 조립을 src/baram/baseline.py로 분리. 00 감사 Decision Box 기준의 cutoff guard, Group 3 target별 mask, train median imputation, capacity clip, template id/time 고정, artifact 생성 금지를 TDD와 subagent 리뷰로 검증.</div>
+    </a>
     <a class="card" href="log/2026-07-06-baram-official-data-audit.html">
       <div class="date">2026-07-06 (KST) · docs/baram-official-data-audit</div>
       <div class="title">공식 데이터 감사 노트북</div>
