@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BARAM model metadata와 run registry 작업 로그</title>
+<style>
+  body { margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; background: #0f1115; color: #e6e9ef; line-height: 1.65; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 36px 20px 64px; }
+  a { color: #58a6ff; }
+  h1 { margin: 0 0 6px; font-size: 1.7rem; }
+  h2 { color: #58a6ff; font-size: 1.05rem; margin-top: 28px; }
+  .sub { color: #8b93a7; margin-bottom: 24px; }
+  .panel { background: #1a1d24; border: 1px solid #2a2f3a; border-radius: 12px; padding: 16px 20px; }
+  li { margin: 6px 0; }
+  code { background: #0b0d11; padding: 1px 6px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Model metadata sidecar와 run registry</h1>
+  <div class="sub">2026-07-11 KST · feature/baram/model-run-registry</div>
+  <div class="panel">
+    <h2>완료</h2>
+    <ul>
+      <li><code>src/baram/registry.py</code>에 공식 입력 fingerprint, label/weather/feature profile, preprocessing hash, model bytes, UTF-8 JSON sidecar, CSV run registry 계약을 추가.</li>
+      <li>train CLI가 model, metadata sidecar, registry를 한 실행으로 저장하고 inference CLI가 registry hash와 feature 순서를 확인한 뒤에만 예측하도록 연결.</li>
+      <li>validator를 통과한 submission canonical bytes SHA256만 같은 <code>run_id</code>에 기록하며, 경로 충돌·변조·중복 ID·부분 validation score를 저장 전에 차단.</li>
+      <li><code>notebooks/05_model_metadata_and_run_registry.ipynb</code>에 벤치마크 융합표와 데이터 파악→전처리→속성 탐색→시각화→해석 5단계를 적용하고 실행 완료 상태로 저장.</li>
+      <li>기존 01 metric 노트북의 연속 code cell 사이에 inventory→submission schema 해석 마크다운을 보강.</li>
+      <li>BARAM 전용 GitHub Actions와 노트북 실행·한글 마크다운 무결성 검사기를 추가.</li>
+    </ul>
+    <h2>검증</h2>
+    <ul>
+      <li>TDD RED: <code>baram.registry</code> 모듈 부재와 새 CLI 인자 부재 실패를 먼저 확인.</li>
+      <li><code>python -m pytest -q</code> 통과: 47 passed.</li>
+      <li>05 노트북 code cell 9개 모두 실행, error output 0개, 내부 focused 10 passed와 전체 47 passed 기록.</li>
+      <li>00~05 노트북 replacement 문자·물음표 치환·연속 code cell·미실행 cell·error output 모두 0개.</li>
+      <li>기본 실행 후 model pickle, submission CSV, <code>outputs/</code> 산출물 미생성 확인.</li>
+    </ul>
+    <h2>다음</h2>
+    <ul>
+      <li>다음 한 작업 후보: weather feature lab에서 mean baseline과 <code>mean+std/min/max+lead</code> 전처리를 같은 2024 holdout으로 비교.</li>
+      <li>상세 시작 프롬프트는 <code>llm-wiki/99-session-handoff/2026-07-11-p0-model-registry.md</code>에 기록.</li>
+    </ul>
+    <h2>차단/주의</h2>
+    <ul>
+      <li>pickle hash 검증은 등록된 로컬 artifact 무결성 계약이며, 신뢰할 수 없는 외부 pickle을 안전하게 만드는 보안 샌드박스가 아님.</li>
+      <li>레포 루트의 기존 worktree·<code>.codex/</code>·<code>.superpowers/</code> 상태는 변경하지 않음.</li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>

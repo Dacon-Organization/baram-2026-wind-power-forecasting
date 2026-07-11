@@ -46,8 +46,8 @@
   </div>
 
   <h2>전체 진척률</h2>
-  <div class="bar"><i style="width:94%"></i></div>
-  <div class="barlabel">공식 데이터 공개 후 전략·데이터·운영 설계를 재정렬. 공식 데이터 로컬 미러, baseline/평가 코드 참조, LLM Wiki, 제출 복구 규칙, Perplexity P3 리서치 반입, 공식 평가 산식 재현, 01 metric 상세 분석 노트북, 공식 baseline 재현 분석 노트북, 00 공식 데이터 감사 노트북, baseline RandomForest train/inference 분리, config/seed/submission ledger와 inference 재현성 검증, submission validator CLI 및 04 분석 노트북까지 완료. 03 재현성 노트북의 깨진 마크다운과 연결 로그도 복구 완료.</div>
+  <div class="bar"><i style="width:96%"></i></div>
+  <div class="barlabel">공식 데이터 공개 후 전략·데이터·운영 설계를 재정렬. 공식 데이터 감사, metric/baseline 재현, train/inference 분리, submission ledger와 validator를 완료했다. 이어서 실제 입력·전처리·feature schema를 model metadata sidecar와 run registry로 연결하고, 05 분석 노트북·전체 노트북 무결성 검사·BARAM 전용 CI까지 완료했다.</div>
 
 
   <h2>마일스톤 파이프라인</h2>
@@ -70,11 +70,17 @@
     <li><span class="tag t-done">DONE</span><div>베이스라인 RandomForest train/inference 분리 — cutoff, target mask, imputation, template 고정 코드화</div></li>
     <li><span class="tag t-done">DONE</span><div>config/seed/submission ledger와 inference 재현성 검증 연결</div></li>
     <li><span class="tag t-done">DONE</span><div>submission validator CLI와 실제 train.py/inference.py 진입점 분리</div></li>
-    <li><span class="tag t-progress">NEXT</span><div>모델 저장 metadata와 run registry 정책 결정</div></li>
+    <li><span class="tag t-done">DONE</span><div>모델 저장 metadata sidecar와 run registry — 데이터·전처리·validation·submission hash 연결</div></li>
+    <li><span class="tag t-progress">NEXT</span><div>Weather feature lab — mean baseline과 mean+std/min/max+lead 전처리 비교</div></li>
   </ul>
 
   <h2>작업 로그</h2>
   <div class="cards">
+    <a class="card" href="log/2026-07-11-baram-model-run-registry.html">
+      <div class="date">2026-07-11 (KST) · feature/baram/model-run-registry</div>
+      <div class="title">Model metadata sidecar와 run registry</div>
+      <div class="summary">공식 입력 파일 SHA256, label/weather/feature profile, preprocessing·feature schema hash를 model pickle과 UTF-8 JSON sidecar에 연결하고, local validation과 validator 통과 submission hash를 같은 run registry 행으로 추적. 05 노트북은 데이터 파악→전처리→속성 탐색→시각화→해석 5단계와 Decision Box를 적용해 실행 완료 상태로 저장했으며, 전체 47 tests와 00~05 노트북 무결성 검사, BARAM CI 구성을 완료.</div>
+    </a>
     <a class="card" href="log/2026-07-07-baram-03-notebook-markdown-fix.html">
       <div class="date">2026-07-07 (KST) · docs/baram-03-notebook-markdown-fix</div>
       <div class="title">03 재현성 노트북 마크다운 복구</div>
