@@ -76,3 +76,16 @@ SHA-256 manifest만 보존했습니다.
 필터된 초기 `main` SHA는 `0669babb64f17f63062f97b1cb9495a66ac07c79`입니다.
 dependency graph snapshot이 없는 최초 PR에만 이 SHA를 비교하는 bootstrap 예외를
 적용하며, 이후 PR에서는 GitHub dependency review가 반드시 실행됩니다.
+
+## GitHub 운영 검증
+
+- 운영 기반: [PR #1](https://github.com/Dacon-Organization/baram-2026-wind-power-forecasting/pull/1)
+- 공통 CI: [run 29175267519](https://github.com/Dacon-Organization/baram-2026-wind-power-forecasting/actions/runs/29175267519) 전체 통과
+- 필수 검사: `CI / gate`, `PR Policy / gate`, `Dependency Review / gate` 통과
+- CodeQL 초기 설정: run `29175195607` 통과, Python default setup 활성화
+- PR CodeQL: run `29175266663` 통과
+- `main-pr-ci` ruleset: Active, 승인 필요 인원 0명, strict 필수 검사 3개
+
+원본 Dacon 저장소의 BARAM 폴더와 레거시 workflow 정리는 PR #1 병합 이후 별도
+작업으로 수행합니다. 원본의 기존 필수 검사와 새 저장소의 검증 체계를 동시에
+끊지 않기 위한 안전 경계입니다.
