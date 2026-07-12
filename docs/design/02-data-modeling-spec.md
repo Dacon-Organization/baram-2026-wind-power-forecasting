@@ -1060,7 +1060,7 @@ Perplexity 리서치에서 반복 확인된 범용 후보는 아래 우선순위
 공식 데이터 공개 후 아래 구조로 확장한다.
 
 ```text
-2026-BARAM-Wind-Power-Prediction-AI-Competition/
+baram-2026-wind-power-forecasting/
 ├── data/
 │   ├── raw/
 │   ├── interim/

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BARAM 독립 저장소 분리</title>
+<style>
+  body { margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; background: #0f1115; color: #e6e9ef; line-height: 1.65; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 36px 20px 64px; }
+  a { color: #58a6ff; }
+  h1 { margin: 0 0 6px; font-size: 1.7rem; }
+  h2 { color: #58a6ff; font-size: 1.05rem; margin-top: 28px; }
+  .sub { color: #8b93a7; margin-bottom: 24px; }
+  .panel { background: #1a1d24; border: 1px solid #2a2f3a; border-radius: 12px; padding: 16px 20px; }
+  li { margin: 6px 0; }
+  code { background: #0b0d11; padding: 1px 6px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>BARAM 독립 저장소 분리와 공통 CI 적용</h1>
+  <div class="sub">2026-07-12 KST · feature/mygithub05253-repository-bootstrap · <a href="https://github.com/Dacon-Organization/baram-2026-wind-power-forecasting/pull/1">PR #1</a></div>
+  <div class="panel">
+    <h2>완료</h2>
+    <ul>
+      <li><code>Dacon-Organization/Dacon</code>의 BARAM subtree를 독립 Public 저장소 루트로 분리</li>
+      <li>canonical main 20커밋·76파일과 역사적 BARAM 브랜치 10개 보존</li>
+      <li>중앙 reusable Python·문서·PR 정책·dependency review CI 연결</li>
+      <li>MIT, AGENTS, Dependabot, CODEOWNERS, NOTICE·DATA_SOURCES 추가</li>
+      <li>모노레포 상대 링크와 개인 로컬 절대 경로 제거</li>
+    </ul>
+    <h2>검증</h2>
+    <ul>
+      <li>원본 subtree와 필터된 root tree SHA <code>dbb9767…cdefc89</code> 일치</li>
+      <li><code>git fsck --full --strict</code> 통과, LFS·서브모듈 0개</li>
+      <li><code>python -m pytest -q</code> 47개 통과</li>
+      <li>00~05 Notebook 무결성 검사 통과</li>
+      <li>raw CSV/XLSX가 Git index와 LFS에 없음을 확인</li>
+    </ul>
+    <h2>다음</h2>
+    <ul>
+      <li>소유자가 PR #1을 squash merge</li>
+      <li>후속 단일 작업에서 Weather feature lab 진행</li>
+      <li>Dacon 원본 BARAM 폴더 cleanup은 대상 저장소 안정화 뒤 별도 PR로 수행</li>
+    </ul>
+    <h2>차단·리스크</h2>
+    <ul>
+      <li>원본 Dacon의 legacy 필수 check 때문에 원본 폴더와 workflow 동시 삭제 금지</li>
+      <li>공식 원자료 10개 약 324.96MiB는 대회 이용 조건과 GitHub 한도 때문에 로컬 전용 유지</li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>

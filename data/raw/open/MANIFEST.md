@@ -2,7 +2,7 @@
 
 생성일: 2026-07-06 KST
 
-원본 위치: `C:\Users\kik32\Downloads\open\`
+원본 위치: DACON 공식 대회 페이지에서 내려받은 로컬 압축 해제 경로
 
 복사 위치: `data/raw/open/`
 
@@ -24,7 +24,7 @@ Hash 알고리즘: SHA256
 검증 명령:
 
 ```powershell
-$project = "C:\Users\kik32\workspace\Dacon\2026-BARAM-Wind-Power-Prediction-AI-Competition"
+$project = (Resolve-Path ".").Path
 Get-ChildItem -Recurse -File -LiteralPath "$project\data\raw\open" |
   Sort-Object FullName |
   ForEach-Object {

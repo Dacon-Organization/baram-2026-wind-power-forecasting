@@ -251,11 +251,11 @@ Create and execute `notebooks/03_reproducible_submission_ledger.ipynb` with:
 Commit only this task's files:
 
 ```bash
-git add 2026-BARAM-Wind-Power-Prediction-AI-Competition/src/baram/reproducibility.py \
-  2026-BARAM-Wind-Power-Prediction-AI-Competition/tests/test_reproducibility.py \
-  2026-BARAM-Wind-Power-Prediction-AI-Competition/notebooks/03_reproducible_submission_ledger.ipynb \
-  2026-BARAM-Wind-Power-Prediction-AI-Competition/docs/superpowers/plans/2026-07-07-baram-reproducible-submission-ledger.md \
-  2026-BARAM-Wind-Power-Prediction-AI-Competition/dev/dashboard/index.html \
-  2026-BARAM-Wind-Power-Prediction-AI-Competition/dev/dashboard/log/2026-07-07-baram-reproducible-submission-ledger.html
+git add src/baram/reproducibility.py \
+  tests/test_reproducibility.py \
+  notebooks/03_reproducible_submission_ledger.ipynb \
+  docs/superpowers/plans/2026-07-07-baram-reproducible-submission-ledger.md \
+  dev/dashboard/index.html \
+  dev/dashboard/log/2026-07-07-baram-reproducible-submission-ledger.html
 git commit -m "feat(baram): add reproducible submission ledger"
 ```
