@@ -4,8 +4,8 @@
 
 | 파일 | 원본 | 크기(bytes) | SHA256 | 용도 |
 |------|------|------------:|--------|------|
-| `notebooks/baseline.ipynb` | `C:\Users\kik32\Downloads\baseline.ipynb` | 149504 | `712b26f4d2748860c94cff1e0100c23810468c983173f8e9ef8d009fe82df48c` | 공식 RandomForest baseline 재현 |
-| `notebooks/evaluation_metric.ipynb` | `C:\Users\kik32\Downloads\평가_산식 코드.ipynb` | 2426 | `0a3ab5a57dba0705dbdbda73cd723be37ef39cce388fcb22b1a220ce523a70f9` | 공식 `total_score`, `1-NMAE`, `FICR` 산식 재현 |
+| `notebooks/baseline.ipynb` | DACON 공식 배포본 | 149504 | `712b26f4d2748860c94cff1e0100c23810468c983173f8e9ef8d009fe82df48c` | 공식 RandomForest baseline 재현 |
+| `notebooks/evaluation_metric.ipynb` | DACON 공식 배포본 | 2426 | `0a3ab5a57dba0705dbdbda73cd723be37ef39cce388fcb22b1a220ce523a70f9` | 공식 `total_score`, `1-NMAE`, `FICR` 산식 재현 |
 
 운영 원칙:
 

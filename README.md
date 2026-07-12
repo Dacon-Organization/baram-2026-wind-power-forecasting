@@ -1,5 +1,8 @@
 # 2026 BARAM 풍력발전량 예측 AI 경진대회
 
+[![CI](https://github.com/Dacon-Organization/baram-2026-wind-power-forecasting/actions/workflows/ci.yml/badge.svg)](https://github.com/Dacon-Organization/baram-2026-wind-power-forecasting/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 > 한국동서발전 · GS E&R · 태백가덕산풍력발전 주최/주관, 데이콘 운영
 > **핵심 과제: 기상예보 데이터 기반 KPX 그룹별 시간 단위 풍력발전량 예측**
 
@@ -8,6 +11,11 @@
 
 2026-07-06 공식 데이터 공개 후에는 실제 배포 파일, 평가 산식 코드, baseline을 기준으로
 이전 가정을 재검증하고, `확정 / 재검증 필요 / 실험 후보 / 제외` 상태를 분리해 관리합니다.
+
+기존 `Dacon-Organization/Dacon` 모노레포의 BARAM 폴더 이력을 보존해 독립
+저장소로 분리했습니다. 과거 PR 기록은
+[Dacon 저장소](https://github.com/Dacon-Organization/Dacon/pulls?q=is%3Apr+baram)에
+남아 있습니다.
 
 ---
 
@@ -45,7 +53,25 @@
 
 ---
 
-## 3. 핵심 데이터 팩트
+## 3. 빠른 시작
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --disable-pip-version-check -r requirements-ci.txt
+python -m pytest -q
+python scripts/check_notebook_integrity.py
+```
+
+학습·추론 CLI 확인:
+
+```powershell
+$env:PYTHONPATH = "src"
+python -m baram.train --help
+python -m baram.inference --help
+```
+
+## 4. 핵심 데이터 팩트
 
 | 항목 | 현재 상태 | 내용 |
 |------|-----------|------|
@@ -68,10 +94,14 @@
 
 ---
 
-## 4. 폴더 구조
+## 5. 폴더 구조
 
-```
-2026-BARAM-Wind-Power-Prediction-AI-Competition/
+```text
+baram-2026-wind-power-forecasting/
+├── .github/workflows/ci.yml
+├── AGENTS.md
+├── DATA_SOURCES.md
+├── LICENSE
 ├── README.md
 ├── data/
 │   └── raw/
@@ -102,6 +132,9 @@
 │       └── notebooks/
 │           ├── baseline.ipynb
 │           └── evaluation_metric.ipynb
+├── src/baram/
+├── tests/
+├── notebooks/
 └── dev/
     └── dashboard/
         ├── index.html
@@ -110,7 +143,7 @@
 
 ---
 
-## 5. 진행 현황
+## 6. 진행 현황
 
 - [x] 사전 워크숍 자료, 데모 노트북, 공식 안내 1차 판독
 - [x] 전략 PRD 작성
@@ -122,8 +155,23 @@
 - [x] 공식 데이터·평가 산식·baseline 반영 최종 설계
 - [x] 공식 데이터 로컬 미러·baseline/평가 코드 참조·LLM Wiki 구조 정리
 - [x] Perplexity P3-1~P3-4 리서치 결과 원문 반입 및 LLM Wiki 갱신
-- [ ] 평가 산식 재현 코드와 metric 노트북 작성
-- [ ] 베이스라인 재현 파이프라인 구축
-- [ ] 제출/검증 자동화 구축
+- [x] 평가 산식 재현 코드와 metric 노트북 작성
+- [x] 베이스라인 재현 학습·추론 파이프라인 구축
+- [x] 제출 검증 CLI와 실행 registry 구축
 
 작업 진척: [프로젝트 대시보드](dev/dashboard/index.html)
+
+## 7. 데이터와 라이선스
+
+공식 CSV/XLSX 원자료는 대회 참여 목적으로만 로컬에 보관하며 Git에 포함하지
+않습니다. 파일 크기와 SHA-256은
+[공식 데이터 manifest](data/raw/open/MANIFEST.md)에서 확인할 수 있습니다.
+
+직접 작성한 코드와 문서는 [MIT License](LICENSE)를 적용합니다. 공식 데이터와
+참조 노트북 등 제3자 자료는 MIT 대상이 아니며 원 이용 조건을 따릅니다. 자세한
+경계는 [DATA_SOURCES.md](DATA_SOURCES.md)와 [NOTICE.md](NOTICE.md)를 참고하세요.
+
+## 8. 기여와 CI
+
+모든 변경은 개인 브랜치, PR, 공통 GitHub Actions와 squash merge 흐름을 따릅니다.
+필수 검증과 데이터 취급 규칙은 [AGENTS.md](AGENTS.md)에 정리되어 있습니다.

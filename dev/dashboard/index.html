@@ -41,13 +41,13 @@
   <h1>2026 BARAM 풍력발전량 예측 — 진척 대시보드</h1>
   <div class="sub">
     데이콘 BARAM 2026 · 대회 시작 2026-07-06 ·
-    <a href="../../../dev/dashboard/index.html">Dacon 전사 대시보드</a> ·
+    <a href="https://github.com/Dacon-Organization/Dacon/tree/main/dev/dashboard">Dacon 전사 대시보드</a> ·
     <a href="../../README.md">프로젝트 README</a>
   </div>
 
   <h2>전체 진척률</h2>
-  <div class="bar"><i style="width:96%"></i></div>
-  <div class="barlabel">공식 데이터 공개 후 전략·데이터·운영 설계를 재정렬. 공식 데이터 감사, metric/baseline 재현, train/inference 분리, submission ledger와 validator를 완료했다. 이어서 실제 입력·전처리·feature schema를 model metadata sidecar와 run registry로 연결하고, 05 분석 노트북·전체 노트북 무결성 검사·BARAM 전용 CI까지 완료했다.</div>
+  <div class="bar"><i style="width:97%"></i></div>
+  <div class="barlabel">공식 데이터 공개 후 전략·데이터·운영 설계를 재정렬. metric/baseline 재현, train/inference 분리, submission ledger와 validator, model metadata sidecar와 run registry를 완료했다. 2026-07-12에는 모노레포 하위 이력을 독립 Public 저장소로 분리하고 공통 CI·보안·데이터 라이선스 경계를 적용했다.</div>
 
 
   <h2>마일스톤 파이프라인</h2>
@@ -71,11 +71,17 @@
     <li><span class="tag t-done">DONE</span><div>config/seed/submission ledger와 inference 재현성 검증 연결</div></li>
     <li><span class="tag t-done">DONE</span><div>submission validator CLI와 실제 train.py/inference.py 진입점 분리</div></li>
     <li><span class="tag t-done">DONE</span><div>모델 저장 metadata sidecar와 run registry — 데이터·전처리·validation·submission hash 연결</div></li>
+    <li><span class="tag t-done">DONE</span><div>독립 저장소 분리 — 20개 main 커밋·76개 파일 이력 보존, 공통 CI·보안·MIT/제3자 데이터 경계 적용</div></li>
     <li><span class="tag t-progress">NEXT</span><div>Weather feature lab — mean baseline과 mean+std/min/max+lead 전처리 비교</div></li>
   </ul>
 
   <h2>작업 로그</h2>
   <div class="cards">
+    <a class="card" href="log/2026-07-12-baram-repository-split.html">
+      <div class="date">2026-07-12 (KST) · feature/mygithub05253-repository-bootstrap</div>
+      <div class="title">BARAM 독립 저장소 분리와 공통 CI 적용</div>
+      <div class="summary">Dacon 모노레포의 BARAM subtree를 git-filter-repo로 루트화해 20개 canonical main 커밋과 76개 파일을 보존했다. 원자료 약 324.96MiB는 기존 ignore와 대회 이용 조건을 유지하고 manifest만 이관했으며, 중앙 reusable CI·solo ruleset·MIT와 제3자 자료 고지를 추가했다.</div>
+    </a>
     <a class="card" href="log/2026-07-11-baram-model-run-registry.html">
       <div class="date">2026-07-11 (KST) · feature/baram/model-run-registry</div>
       <div class="title">Model metadata sidecar와 run registry</div>

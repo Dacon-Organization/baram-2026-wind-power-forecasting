@@ -3,8 +3,8 @@
 아래 프롬프트를 다음 Codex 세션 첫 메시지로 그대로 사용한다.
 
 ```text
-작업 경로:
-C:\Users\kik32\workspace\Dacon\2026-BARAM-Wind-Power-Prediction-AI-Competition
+작업 저장소:
+Dacon-Organization/baram-2026-wind-power-forecasting
 
 우리는 DACON "제3회 풍력발전량 예측 AI 경진대회 - BARAM 2026" 프로젝트를 진행 중이다.
 직전 세션은 P0 model metadata sidecar와 run registry 작업을 완료했다. 이 작업을 다시 만들거나 범위를 섞지 말고, 먼저 PR과 main 반영 상태를 확인한 뒤 다음 한 작업만 진행한다.
@@ -13,8 +13,8 @@ C:\Users\kik32\workspace\Dacon\2026-BARAM-Wind-Power-Prediction-AI-Competition
 1. AGENTS.md를 읽고 R1 Git 플로우, R2 dashboard, R3 1작업-1정지를 따른다.
 2. `git status --short --branch`, `git fetch origin --prune`, 현재 P0 PR 상태와 BARAM CI 상태를 확인한다.
 3. P0 PR이 아직 merge 전이면 새 구현을 시작하지 말고 상태·review·check를 먼저 판단한다.
-4. P0 PR이 merge됐다면 최신 main을 pull하고 `feature/baram/weather-feature-lab` 브랜치를 만든다.
-5. 사용자/환경 소유인 루트 `.worktrees/kik32-alphafolio-demo-dashboard`, `.codex/`, `.superpowers/`는 건드리지 않는다.
+4. P0 PR이 merge됐다면 최신 main을 pull하고 `feature/mygithub05253-weather-feature-lab` 브랜치를 만든다.
+5. 저장소 밖 사용자 작업 폴더와 로컬 자동화 상태는 건드리지 않는다.
 
 직전 세션 완료 내용:
 - `src/baram/registry.py`: 입력 파일 SHA256, label/weather/feature profile, preprocessing/data/schema hash, model bytes와 JSON sidecar, CSV run registry 구현.
@@ -22,7 +22,7 @@ C:\Users\kik32\workspace\Dacon\2026-BARAM-Wind-Power-Prediction-AI-Competition
 - `src/baram/inference.py`: registry에 등록된 model/sidecar hash와 feature 순서를 검증한 뒤 inference. validator 통과 canonical submission hash만 run registry에 연결.
 - `notebooks/05_model_metadata_and_run_registry.ipynb`: 실제 공식 train 데이터 read-only 분석, 5단계 방법론, 2024 holdout smoke, Decision Box, 실패 사례, 실행 결과 저장.
 - `scripts/check_notebook_integrity.py`: 00~05 실행 상태, error output, UTF-8 replacement, 연속 물음표 치환, 연속 code cell 검사.
-- `.github/workflows/baram-ci.yml`: synthetic pytest와 노트북 정적 무결성 CI.
+- `.github/workflows/ci.yml`: 공통 reusable workflow 기반 pytest와 노트북 무결성 CI.
 - 마지막 로컬 검증 기준: `python -m pytest -q` 47 passed, 노트북 6개 무결성 통과, 실제 model/submission/outputs 미생성.
 
 먼저 읽을 파일:

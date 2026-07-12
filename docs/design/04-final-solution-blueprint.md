@@ -133,7 +133,7 @@ EDA 노트북의 `데이터 파악 -> 전처리 -> 속성 탐색 -> 시각화 ->
 제출 검증 요구 때문에 train과 inference는 반드시 분리한다.
 
 ```text
-2026-BARAM-Wind-Power-Prediction-AI-Competition/
+baram-2026-wind-power-forecasting/
 ├── notebooks/
 │   ├── 00_official_data_audit.ipynb
 │   ├── 01_metric_reproduction.ipynb
