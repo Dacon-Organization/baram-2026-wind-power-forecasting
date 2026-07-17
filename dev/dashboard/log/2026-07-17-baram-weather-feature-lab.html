@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BARAM Weather grid feature lab 작업 로그</title>
+<style>
+  :root { --bg:#0f1115; --card:#1a1d24; --border:#2a2f3a; --text:#e6e9ef; --muted:#8b93a7; --done:#3fb950; --warn:#d29922; --accent:#58a6ff; --bad:#f85149; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--text); line-height:1.65; }
+  .wrap { max-width:940px; margin:0 auto; padding:36px 20px 64px; }
+  a { color:var(--accent); }
+  h1 { margin:0 0 6px; font-size:1.7rem; }
+  h2 { color:var(--accent); font-size:1.08rem; margin-top:30px; }
+  h3 { color:#c9d1d9; font-size:.98rem; margin-top:22px; }
+  .sub { color:var(--muted); margin-bottom:24px; }
+  .panel { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px 22px; }
+  .decision { border-left:4px solid var(--done); background:rgba(63,185,80,.08); padding:12px 16px; border-radius:6px; }
+  .warn { border-left:4px solid var(--warn); background:rgba(210,153,34,.08); padding:12px 16px; border-radius:6px; }
+  table { width:100%; border-collapse:collapse; margin:10px 0 18px; font-size:.9rem; }
+  th,td { border:1px solid var(--border); padding:8px 10px; text-align:right; }
+  th:first-child,td:first-child { text-align:left; }
+  th { background:#11151c; color:#c9d1d9; }
+  .up { color:var(--done); font-weight:600; }
+  li { margin:6px 0; }
+  code { background:#0b0d11; padding:1px 6px; border-radius:4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Weather grid feature lab</h1>
+  <div class="sub">2026-07-17 KST · feature/baram/weather-feature-lab</div>
+  <div class="panel">
+    <h2>완료</h2>
+    <ul>
+      <li><code>src/baram/features/weather_grid.py</code>에 LDAPS 16/GFS 9 grid, 12~35시간 lead, cutoff, forecast 내부 lead 일치, numeric weather, source prefix, exact train/test schema 계약을 구현.</li>
+      <li>공식 mean-only 비교군과 <code>mean + std(ddof=0) + min + max + lead</code> 확장안을 별도 schema로 생성. 기존 <code>baseline.py</code>와 registry schema는 변경하지 않음.</li>
+      <li>all-grid NaN을 0으로 숨기지 않고 집계 NaN으로 보존한 뒤, 2022~2023 train에만 fit한 deterministic median으로 holdout/test를 transform.</li>
+      <li><code>notebooks/06_weather_feature_lab.ipynb</code>를 데이터 파악→전처리/가공→속성 탐색→시각화→해석/의사결정 5단계와 Decision Box 구조로 작성하고 실행 완료 상태로 저장.</li>
+    </ul>
+
+    <h2>데이터 파악·전처리 결과</h2>
+    <table>
+      <thead><tr><th>source</th><th>train rows</th><th>test rows</th><th>grid</th><th>lead</th><th>test all-grid NaN</th></tr></thead>
+      <tbody>
+        <tr><td>LDAPS</td><td>420,864</td><td>140,160</td><td>16 exact</td><td>12~35h</td><td>3시각 · 47 변수</td></tr>
+        <tr><td>GFS</td><td>236,736</td><td>78,840</td><td>9 exact</td><td>12~35h</td><td>0</td></tr>
+      </tbody>
+    </table>
+    <ul>
+      <li>cutoff 위반 0, forecast 내부 lead 불일치 0, train/test raw 컬럼 이름·순서 drift 0.</li>
+      <li>LDAPS test raw 결측 752 cells(수치 cell 기준 약 0.0179%)는 2025-04-08 17시(14변수), 06-18 18시(14변수), 07-18 06시(19변수)에 집중.</li>
+      <li>집계 전 결측을 mean 47개, expanded 188개로 그대로 노출하고 train-fit median 후 모두 0개로 변환.</li>
+      <li>달력 연도 <code>&lt;2024</code> 17,519행을 train, <code>==2024</code> 8,784행을 holdout으로 고정하고 2025-01-01 00시 경계 1행은 제외.</li>
+    </ul>
+
+    <h2>동일 조건 2024 holdout 비교</h2>
+    <table>
+      <thead><tr><th>feature set</th><th>features</th><th>total score</th><th>1-NMAE</th><th>FICR</th><th>fit+predict</th></tr></thead>
+      <tbody>
+        <tr><td>official mean</td><td>74</td><td>0.576938</td><td>0.863228</td><td>0.290647</td><td>약 3s</td></tr>
+        <tr><td>expanded spatial</td><td>271</td><td class="up">0.585265</td><td class="up">0.867325</td><td class="up">0.303204</td><td>약 6s</td></tr>
+        <tr><td>expanded - mean</td><td>+197</td><td class="up">+0.008327</td><td class="up">+0.004097</td><td class="up">+0.012557</td><td>약 2배</td></tr>
+      </tbody>
+    </table>
+    <table>
+      <thead><tr><th>target</th><th>NMAE mean</th><th>NMAE expanded</th><th>8% mean</th><th>8% expanded</th></tr></thead>
+      <tbody>
+        <tr><td>Group 1</td><td>0.129808</td><td class="up">0.126971</td><td>0.377430</td><td class="up">0.380437</td></tr>
+        <tr><td>Group 2</td><td>0.128420</td><td class="up">0.124087</td><td>0.401929</td><td class="up">0.422830</td></tr>
+        <tr><td>Group 3</td><td>0.152087</td><td class="up">0.146965</td><td>0.345817</td><td class="up">0.360053</td></tr>
+      </tbody>
+    </table>
+
+    <h2>TDD RED → GREEN</h2>
+    <ul>
+      <li>구현 전 <code>python -m pytest tests/test_weather_features.py -q</code>: 14 failed in 2.55s.</li>
+      <li>RED 범위: metadata, cutoff, LDAPS/GFS grid, forecast lead, numeric 부재, schema 이름·순서 drift, all-grid NaN 은폐, prefix·중복 이름, ddof·정렬·train-fit median.</li>
+      <li>최소 구현 후 focused 14 passed; 전체 회귀 61 passed.</li>
+    </ul>
+
+    <h2>실패 사례와 보정</h2>
+    <div class="warn">
+      첫 노트북 실행은 Windows CP949가 pytest의 UTF-8 한국어 출력을 decode하지 못해 마지막 검증 셀에서 중단됐다. subprocess에 <code>encoding="utf-8"</code>과 <code>errors="replace"</code>를 명시해 재실행했고, 최종 노트북은 error output 0으로 저장했다. 이 실패는 데이터·모델 오류가 아니라 실행 환경의 출력 encoding 계약 누락이었다.
+    </div>
+
+    <h2>Decision Box</h2>
+    <div class="decision">
+      <strong>채택:</strong> <code>mean + std(ddof=0) + min + max + lead</code>를 다음 모델링 단계의 weather feature 기준선으로 승격한다. total score, 1-NMAE, FICR와 세 target NMAE·6%·8% 안착률이 모두 개선됐다. 단, 74→271개 차원과 약 2배 실행 시간, 단일 RF·2024 holdout 한계가 있으므로 공식 mean은 통제군으로 유지한다.
+    </div>
+
+    <h2>검증</h2>
+    <ul>
+      <li><code>python -m pytest -q</code>: 61 passed.</li>
+      <li><code>python scripts/check_notebook_integrity.py</code>: 00~06 총 7개 통과.</li>
+      <li>06 code cell 13개 실행번호 1~13, error output 0, replacement 문자 0, 연속 물음표 0, 연속 code cell 0.</li>
+      <li>actual hash 학습 전후 동일. prediction만 0~capacity clip.</li>
+      <li>model·registry CSV·submission CSV·<code>outputs/</code> 파일 생성 0개(<code>files_written=False</code>).</li>
+    </ul>
+
+    <h2>다음</h2>
+    <ol>
+      <li><strong>P1:</strong> u/v 기반 wind speed·direction 물리 파생 feature lab.</li>
+      <li><strong>P2:</strong> turbine 좌표 nearest/IDW grid pooling.</li>
+      <li><strong>P3:</strong> 계절 fold와 GBM 모델군에서 expanded 결론 강건성 확인.</li>
+    </ol>
+    <p>R3에 따라 위 후보는 시작하지 않고 이번 Weather grid feature lab 완료 후 정지한다.</p>
+
+    <h2>차단/주의</h2>
+    <ul>
+      <li>현재 차단 없음.</li>
+      <li>기존 registry preprocessing 계약은 mean으로 고정되어 있으므로 expanded schema를 기존 계약으로 거짓 등록하지 않는다.</li>
+      <li>레포 상위의 사용자 소유 worktree·<code>AGENTS.md</code>·<code>.codex/</code>·<code>.github/AGENTS.md</code>·<code>.superpowers/</code>·다른 대회 폴더는 수정·stage하지 않음.</li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>

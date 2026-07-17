@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BARAM 독립 저장소 Feature Lab 동기화</title>
+<style>
+  :root { --bg:#0f1115; --card:#1a1d24; --border:#2a2f3a; --text:#e6e9ef; --muted:#8b93a7; --done:#3fb950; --warn:#d29922; --accent:#58a6ff; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--text); line-height:1.65; }
+  .wrap { max-width:940px; margin:0 auto; padding:36px 20px 64px; }
+  a { color:var(--accent); }
+  h1 { margin:0 0 6px; font-size:1.7rem; }
+  h2 { color:var(--accent); font-size:1.08rem; margin-top:30px; }
+  .sub { color:var(--muted); margin-bottom:24px; }
+  .panel { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px 22px; }
+  .decision { border-left:4px solid var(--done); background:rgba(63,185,80,.08); padding:12px 16px; border-radius:6px; }
+  .warn { border-left:4px solid var(--warn); background:rgba(210,153,34,.08); padding:12px 16px; border-radius:6px; }
+  table { width:100%; border-collapse:collapse; margin:10px 0 18px; font-size:.9rem; }
+  th,td { border:1px solid var(--border); padding:8px 10px; text-align:left; }
+  th { background:#11151c; color:#c9d1d9; }
+  li { margin:6px 0; }
+  code { background:#0b0d11; padding:1px 6px; border-radius:4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>독립 저장소 누락 Feature Lab 동기화</h1>
+  <div class="sub">2026-07-17 KST · chore/mygithub05253-feature-lab-sync</div>
+  <div class="panel">
+    <h2>작업 배경</h2>
+    <p>
+      BARAM 프로젝트의 정본이
+      <a href="https://github.com/Dacon-Organization/baram-2026-wind-power-forecasting">독립 저장소</a>로
+      분리됐지만, 분리 기준점 이후 기존 Dacon 모노레포에서 완료된
+      <a href="https://github.com/Dacon-Organization/Dacon/pull/185">PR #185</a>와
+      <a href="https://github.com/Dacon-Organization/Dacon/pull/186">PR #186</a>이
+      독립 저장소 main에는 아직 없었다.
+    </p>
+
+    <h2>기준점과 이관 범위</h2>
+    <table>
+      <thead><tr><th>항목</th><th>확인값</th></tr></thead>
+      <tbody>
+        <tr><td>독립 저장소 이관 기준</td><td>기존 PR #178, old <code>32deb43</code> → standalone <code>0669babb</code></td></tr>
+        <tr><td>독립 저장소 운영 기반</td><td><code>87b2bd6</code>, CI·CODEOWNERS·라이선스·split 기록</td></tr>
+        <tr><td>누락 작업 1</td><td>Weather Grid Feature Lab, old <code>e5a4faf</code></td></tr>
+        <tr><td>누락 작업 2</td><td>Wind Vector Feature Lab, old <code>18921b9</code></td></tr>
+        <tr><td>신규 이관</td><td>코드·테스트·실행 노트북·작업 로그 9개</td></tr>
+        <tr><td>수동 병합</td><td><code>dev/dashboard/index.html</code> 1개</td></tr>
+      </tbody>
+    </table>
+
+    <h2>정합성 검증</h2>
+    <ul>
+      <li>9개 이관 파일은 기존 모노레포 main의 최종 Git blob SHA와 모두 정확히 일치한다.</li>
+      <li>dashboard index는 독립 저장소의 전사 dashboard 절대 링크, repository-split 마일스톤과 2026-07-12 카드를 보존한 채 Weather/Wind 기록만 병합했다.</li>
+      <li>독립 저장소 운영 기반 24개 파일은 수정하거나 되돌리지 않았다.</li>
+      <li>실행 완료 06·07 노트북은 historical output을 포함한 원본 blob을 보존한다. 소스는 <code>Path.cwd()</code> 기반이어서 독립 저장소에서도 원시 데이터가 로컬 복구되면 재실행 가능하다.</li>
+    </ul>
+
+    <h2>데이터·산출물 경계</h2>
+    <div class="warn">
+      공식 raw CSV/XLSX는 라이선스와 저장소 정책에 따라 Git으로 이관하지 않았다.
+      모델 파일, registry CSV, submission CSV와 outputs도 만들거나 stage하지 않았다.
+      독립 저장소에는 MANIFEST와 복구 안내만 유지한다.
+    </div>
+
+    <h2>검증</h2>
+    <ul>
+      <li><code>python -m pytest -q</code>: 79 passed.</li>
+      <li><code>python scripts/check_notebook_integrity.py</code>: 00~07 총 8개 통과.</li>
+      <li>06·07 노트북 missing execution, error output, replacement character, 연속 물음표와 연속 code cell 0.</li>
+      <li>Git stage 대상에 raw·모델·submission·outputs 0개.</li>
+    </ul>
+
+    <h2>Decision Box</h2>
+    <div class="decision">
+      <strong>정본 전환 완료:</strong>
+      앞으로 BARAM의 코드·노트북·dashboard·PR은
+      <code>Dacon-Organization/baram-2026-wind-power-forecasting</code>만 사용한다.
+      기존 Dacon 모노레포의 PR #185·#186은 이관 출처 기록으로만 남기고 후속 작업은
+      독립 저장소 main에서 분기한다.
+    </div>
+
+    <h2>다음 후보</h2>
+    <ol>
+      <li>Turbine 좌표 nearest/IDW grid pooling.</li>
+      <li>GFS PBL·850/700/500hPa vector ablation.</li>
+      <li>계절 fold와 GBM 민감도.</li>
+    </ol>
+    <p>R3에 따라 후속 후보는 시작하지 않고 이번 저장소 동기화 한 작업에서 멈춘다.</p>
+  </div>
+</div>
+</body>
+</html>
