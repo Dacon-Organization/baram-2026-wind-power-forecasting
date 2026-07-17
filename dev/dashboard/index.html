@@ -46,8 +46,8 @@
   </div>
 
   <h2>전체 진척률</h2>
-  <div class="bar"><i style="width:97%"></i></div>
-  <div class="barlabel">공식 데이터 공개 후 전략·데이터·운영 설계를 재정렬. metric/baseline 재현, train/inference 분리, submission ledger와 validator, model metadata sidecar와 run registry를 완료했다. 2026-07-12에는 모노레포 하위 이력을 독립 Public 저장소로 분리하고 공통 CI·보안·데이터 라이선스 경계를 적용했다.</div>
+  <div class="bar"><i style="width:98%"></i></div>
+  <div class="barlabel">공식 데이터 공개 후 metric/baseline 재현, train/inference 분리, submission ledger·validator·model registry를 완료했다. 2026-07-12 독립 Public 저장소 분리 이후 누락됐던 Weather/Wind feature lab을 동기화했으며, 2024 holdout total score는 공식 mean 0.576938에서 spatial 0.585265, vector 0.586482까지 개선됐다.</div>
 
 
   <h2>마일스톤 파이프라인</h2>
@@ -72,11 +72,28 @@
     <li><span class="tag t-done">DONE</span><div>submission validator CLI와 실제 train.py/inference.py 진입점 분리</div></li>
     <li><span class="tag t-done">DONE</span><div>모델 저장 metadata sidecar와 run registry — 데이터·전처리·validation·submission hash 연결</div></li>
     <li><span class="tag t-done">DONE</span><div>독립 저장소 분리 — 20개 main 커밋·76개 파일 이력 보존, 공통 CI·보안·MIT/제3자 데이터 경계 적용</div></li>
-    <li><span class="tag t-progress">NEXT</span><div>Weather feature lab — mean baseline과 mean+std/min/max+lead 전처리 비교</div></li>
+    <li><span class="tag t-done">DONE</span><div>Weather feature lab — mean baseline과 mean+std/min/max+lead 전처리 비교</div></li>
+    <li><span class="tag t-done">DONE</span><div>Wind vector feature lab — LDAPS 10m·GFS 10/80/100m speed·wind-from 순환 피처 비교</div></li>
+    <li><span class="tag t-progress">NEXT</span><div>Turbine-aware grid pooling lab — 발전단지 좌표 nearest/IDW 비교</div></li>
   </ul>
 
   <h2>작업 로그</h2>
   <div class="cards">
+    <a class="card" href="log/2026-07-17-baram-post-split-feature-sync.html">
+      <div class="date">2026-07-17 (KST) · chore/mygithub05253-feature-lab-sync</div>
+      <div class="title">독립 저장소 누락 Feature Lab 동기화</div>
+      <div class="summary">Dacon 모노레포에서 독립 저장소 분리 이후 완료된 PR #185 Weather Grid와 #186 Wind Vector의 9개 파일을 원본 Git blob과 동일하게 이관하고, 독립 저장소의 CI·라이선스·split 기록을 보존해 dashboard index만 수동 병합했다. 공식 raw 데이터와 모델·submission 산출물은 이관하지 않았다.</div>
+    </a>
+    <a class="card" href="log/2026-07-17-baram-wind-vector-feature-lab.html">
+      <div class="date">2026-07-17 (KST) · feature/baram/wind-vector-feature-lab</div>
+      <div class="title">Wind Vector Feature Lab</div>
+      <div class="summary">KMA·ECMWF 규약과 원시 U/V를 감사해 stress·성분 극값을 제외하고 LDAPS 10m와 GFS 10/80/100m만 파생. grid별 speed·wind-from sin/cos 48개를 추가해 동일 RF·2024 holdout total score 0.585265→0.586482, 1-NMAE·FICR와 Group 1·3 NMAE를 개선했다. Group 2 소폭 퇴행과 LDAPS 방향 좌표계 한계를 기록했다.</div>
+    </a>
+    <a class="card" href="log/2026-07-17-baram-weather-feature-lab.html">
+      <div class="date">2026-07-17 (KST) · feature/baram/weather-feature-lab</div>
+      <div class="title">Weather Grid Feature Lab</div>
+      <div class="summary">LDAPS 16/GFS 9 grid·lead·cutoff·schema 계약과 all-grid NaN 보존→train-fit median을 TDD로 잠금. 공식 mean 74개와 mean+std(ddof=0)+min+max+lead 271개를 동일 RF·2024 holdout으로 비교해 total score 0.576938→0.585265, 1-NMAE·FICR·세 target NMAE와 6%/8% 안착률을 모두 개선했다.</div>
+    </a>
     <a class="card" href="log/2026-07-12-baram-repository-split.html">
       <div class="date">2026-07-12 (KST) · feature/mygithub05253-repository-bootstrap</div>
       <div class="title">BARAM 독립 저장소 분리와 공통 CI 적용</div>
