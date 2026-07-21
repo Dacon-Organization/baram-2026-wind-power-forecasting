@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BARAM Turbine Spatial Pooling Feature Lab 작업 로그</title>
+<style>
+  :root { --bg:#0f1115; --card:#1a1d24; --border:#2a2f3a; --text:#e6e9ef; --muted:#8b93a7; --done:#3fb950; --warn:#d29922; --accent:#58a6ff; --bad:#f85149; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--text); line-height:1.65; }
+  .wrap { max-width:960px; margin:0 auto; padding:36px 20px 64px; }
+  a { color:var(--accent); }
+  h1 { margin:0 0 6px; font-size:1.7rem; }
+  h2 { color:var(--accent); font-size:1.08rem; margin-top:30px; }
+  .sub { color:var(--muted); margin-bottom:24px; }
+  .panel { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px 22px; }
+  .decision { border-left:4px solid var(--done); background:rgba(63,185,80,.08); padding:12px 16px; border-radius:6px; }
+  .warn { border-left:4px solid var(--warn); background:rgba(210,153,34,.08); padding:12px 16px; border-radius:6px; }
+  table { width:100%; border-collapse:collapse; margin:10px 0 18px; font-size:.9rem; }
+  th,td { border:1px solid var(--border); padding:8px 10px; text-align:right; }
+  th:first-child,td:first-child { text-align:left; }
+  th { background:#11151c; color:#c9d1d9; }
+  .up { color:var(--done); font-weight:600; }
+  .down { color:var(--bad); font-weight:600; }
+  li { margin:6px 0; }
+  code { background:#0b0d11; padding:1px 6px; border-radius:4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Turbine Spatial Pooling Feature Lab</h1>
+  <div class="sub">2026-07-17 KST · feature/mygithub05253-turbine-spatial-pooling</div>
+  <div class="panel">
+    <h2>완료 범위</h2>
+    <ul>
+      <li>공식 <code>info.xlsx</code>의 17개 터빈 위·경도와 설비 용량을 정규화해 임의 좌표 없이 LDAPS 16개·GFS 9개 grid와 직접 연결했다.</li>
+      <li>각 터빈에서 haversine 거리를 계산하고 nearest와 IDW를 적용한 뒤, 발전단지 안에서는 터빈 용량 비율로 다시 집계하는 결정론적 공간 pooling 계약을 구현했다.</li>
+      <li>부분 grid 결측은 관측 가능한 weight만 재정규화하고 전체 grid 결측은 NaN으로 보존했다. imputer는 train에만 fit하고 holdout·test에는 transform만 적용했다.</li>
+      <li>공식 mean, expanded, vector 통제군과 공간 후보를 동일 RandomForest·seed·2024 time holdout·target별 non-null mask·metric·prediction clipping 조건에서 비교했다.</li>
+      <li>모델 파일, registry CSV, submission CSV와 <code>outputs/</code> 산출물은 만들지 않았으며 기존 baseline·registry schema도 변경하지 않았다.</li>
+    </ul>
+
+    <h2>공식 공간 계약</h2>
+    <table>
+      <thead><tr><th>항목</th><th>확인값</th><th>적용 판단</th></tr></thead>
+      <tbody>
+        <tr><td>터빈</td><td>Group 1 6기 · Group 2 6기 · Group 3 5기</td><td>공식 DMS 좌표를 십진수로 변환</td></tr>
+        <tr><td>설비 용량</td><td>21.6MW · 21.6MW · 21.0MW</td><td>단지 안 터빈 pooling weight</td></tr>
+        <tr><td>LDAPS</td><td>16 grids, 약 1.5km</td><td>터빈별 nearest가 5개 grid로 분산</td></tr>
+        <tr><td>GFS</td><td>9 grids, 0.25°</td><td>17기 모두 grid 5가 nearest</td></tr>
+        <tr><td>IDW</td><td>거리의 역수, p=1·2</td><td>exact-zero·tie·결측 weight 계약 고정</td></tr>
+        <tr><td>schema</td><td>raw → group → nearest/IDW 고정 순서</td><td>train/test 이름·순서·grid geometry drift 차단</td></tr>
+      </tbody>
+    </table>
+
+    <h2>TDD RED → GREEN</h2>
+    <ul>
+      <li>구현 전 focused 실행은 공개 API 스텁의 명시적 <code>NotImplementedError</code>에서 <strong>26 failed</strong>로 실패했다.</li>
+      <li>실패 범위는 터빈 metadata·그룹 용량, nearest tie, IDW zero distance, 부분·전체 결측, 입력 불변, schema·좌표·grid drift와 결정론 계약이었다.</li>
+      <li>최소 구현 후 focused <strong>26 passed</strong>로 전환했다.</li>
+    </ul>
+
+    <h2>동일 조건 2024 holdout</h2>
+    <table>
+      <thead><tr><th>feature set</th><th>features</th><th>total score</th><th>1-NMAE</th><th>FICR</th><th>total Δ</th></tr></thead>
+      <tbody>
+        <tr><td>expanded + vector</td><td>319</td><td>0.586482</td><td>0.867895</td><td>0.305070</td><td>통제군</td></tr>
+        <tr><td>all-group nearest</td><td>550</td><td>0.591249</td><td>0.869399</td><td>0.313099</td><td class="up">+0.004767</td></tr>
+        <tr><td>all-group IDW p=1</td><td>550</td><td>0.590010</td><td>0.868738</td><td>0.311283</td><td class="up">+0.003528</td></tr>
+        <tr><td>all-group IDW p=2</td><td>550</td><td class="up">0.592485</td><td class="up">0.869565</td><td class="up">0.315406</td><td class="up">+0.006003</td></tr>
+        <tr><td>own-group nearest</td><td>396</td><td>0.589828</td><td>0.868767</td><td>0.310890</td><td class="up">+0.003346</td></tr>
+        <tr><td>own-group IDW p=2</td><td>396</td><td>0.589269</td><td>0.868836</td><td>0.309701</td><td class="up">+0.002787</td></tr>
+      </tbody>
+    </table>
+    <p>all-group IDW p=2는 vector 통제군보다 1-NMAE <span class="up">+0.001670</span>, FICR <span class="up">+0.010336</span>을 얻어 total score가 가장 높았다. own-group nearest는 154개 적은 396개 feature로도 total <span class="up">+0.003346</span>을 유지해 축소 대안으로 남겼다.</p>
+
+    <h2>채택 후보의 target 안정성</h2>
+    <table>
+      <thead><tr><th>target</th><th>NMAE vector</th><th>NMAE IDW p=2</th><th>FICR Δ</th><th>6% Δ</th><th>8% Δ</th></tr></thead>
+      <tbody>
+        <tr><td>Group 1</td><td>0.126590</td><td class="up">0.124428</td><td class="up">+0.016650</td><td class="up">+0.013229</td><td class="up">+0.008619</td></tr>
+        <tr><td>Group 2</td><td>0.124307</td><td class="up">0.123153</td><td class="up">+0.009957</td><td class="up">+0.005024</td><td class="up">+0.002412</td></tr>
+        <tr><td>Group 3</td><td>0.145419</td><td class="up">0.143724</td><td class="up">+0.004401</td><td class="up">+0.004161</td><td class="down">-0.000438</td></tr>
+      </tbody>
+    </table>
+
+    <h2>실패 사례·한계</h2>
+    <div class="warn">
+      <strong>공간 해상도 한계:</strong> GFS는 17개 터빈 모두 같은 grid 5를 nearest로 선택해 nearest만으로는 터빈 위치를 구분하지 못했다. LDAPS의 VESTAS-01은 1·2순위 grid 거리 차가 약 18m에 불과해 좌표·격자 경계에 민감하다. 또한 best 후보도 Group 3의 8% 안착률은 0.364871→0.364433으로 0.000438 하락했다.
+    </div>
+    <ul>
+      <li>LDAPS test의 47개 forecast-variable 쌍은 16개 grid가 모두 결측이었다. 공간 pooling으로 복원하지 않고 NaN을 보존한 뒤 train-fit median만 적용했다.</li>
+      <li>IDW p=1도 vector보다 개선됐지만, p=2보다 total·FICR와 target 개선 폭이 낮아 채택하지 않았다.</li>
+      <li>all-group 550개 후보는 다른 발전단지의 공간 요약도 사용하므로, 396개 own-group 후보를 차원 증가 효과를 분리하는 통제군으로 유지했다.</li>
+      <li>actual은 원본 값을 유지했고 prediction만 0~capacity로 clip했다. Group 3 결측 label은 0으로 대체하지 않고 target별 non-null mask를 사용했다.</li>
+    </ul>
+
+    <h2>Decision Box</h2>
+    <div class="decision">
+      <strong>채택 후보 — all-group IDW p=2:</strong>
+      공식 터빈 좌표로 계산한 거리 가중 pooling 231개를 vector 319개에 더한다. 2024 holdout에서 total score가 0.586482→0.592485로 가장 높고 모든 target의 NMAE·FICR·6% 안착률이 개선됐다. 다만 GFS 해상도, LDAPS 경계 민감도와 Group 3 8% 퇴행 때문에 자동 registry 승격은 하지 않고, <strong>own-group nearest 396개</strong>를 더 작은 강건성 대안으로 함께 유지한다.
+    </div>
+
+    <h2>검증·산출물 안전</h2>
+    <ul>
+      <li>신규 공간 계약 focused test: 26 passed.</li>
+      <li>전체 pytest: 105 passed, notebook integrity: 00~08 총 9개 통과.</li>
+      <li>2022~2023 train fit → 2024 holdout transform만 사용했고 2025 경계 행은 validation에서 제외했다.</li>
+      <li>test는 schema·geometry·결측 전파만 검사했으며 label이나 평가 결과를 전처리 fit에 사용하지 않았다.</li>
+      <li>모델·submission·registry·outputs 신규 파일 0, 공식 raw stage 0.</li>
+    </ul>
+
+    <h2>다음 후보</h2>
+    <ol>
+      <li><strong>P1:</strong> seasonal/time fold와 GBM 모델에서 IDW p=2·nearest 순위 민감도 확인.</li>
+      <li><strong>P2:</strong> GFS PBL·850/700/500hPa vector ablation.</li>
+      <li><strong>P3:</strong> local cutoff·k-nearest 또는 direction-aware pooling.</li>
+    </ol>
+    <p>R3에 따라 후속 후보는 기록만 하고 Turbine Spatial Pooling Feature Lab 완료 후 정지한다.</p>
+
+    <h2>차단·주의</h2>
+    <ul>
+      <li>현재 차단 없음.</li>
+      <li>기존 baseline·registry preprocessing schema는 이 실험의 550개 schema로 자동 변경하지 않는다.</li>
+      <li>공식 raw와 사용자 소유 변경은 수정·stage·stash·reset·clean하지 않는다.</li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>
