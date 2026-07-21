@@ -46,8 +46,8 @@
   </div>
 
   <h2>전체 진척률</h2>
-  <div class="bar"><i style="width:98%"></i></div>
-  <div class="barlabel">공식 데이터 공개 후 metric/baseline 재현, train/inference 분리, submission ledger·validator·model registry를 완료했다. 2026-07-12 독립 Public 저장소 분리 이후 누락됐던 Weather/Wind feature lab을 동기화했으며, 2024 holdout total score는 공식 mean 0.576938에서 spatial 0.585265, vector 0.586482까지 개선됐다.</div>
+  <div class="bar"><i style="width:99%"></i></div>
+  <div class="barlabel">공식 데이터 공개 후 metric/baseline 재현, train/inference 분리, submission ledger·validator·model registry를 완료했다. Weather/Wind feature lab에 이어 공식 터빈 좌표 기반 spatial pooling을 검증했으며, 동일 2024 holdout total score는 공식 mean 0.576938에서 vector 0.586482, all-group IDW p=2 0.592485까지 개선됐다.</div>
 
 
   <h2>마일스톤 파이프라인</h2>
@@ -74,11 +74,17 @@
     <li><span class="tag t-done">DONE</span><div>독립 저장소 분리 — 20개 main 커밋·76개 파일 이력 보존, 공통 CI·보안·MIT/제3자 데이터 경계 적용</div></li>
     <li><span class="tag t-done">DONE</span><div>Weather feature lab — mean baseline과 mean+std/min/max+lead 전처리 비교</div></li>
     <li><span class="tag t-done">DONE</span><div>Wind vector feature lab — LDAPS 10m·GFS 10/80/100m speed·wind-from 순환 피처 비교</div></li>
-    <li><span class="tag t-progress">NEXT</span><div>Turbine-aware grid pooling lab — 발전단지 좌표 nearest/IDW 비교</div></li>
+    <li><span class="tag t-done">DONE</span><div>Turbine-aware grid pooling lab — 공식 터빈 좌표 nearest/IDW와 all-group·own-group 범위 비교</div></li>
+    <li><span class="tag t-progress">NEXT</span><div>시간 강건성 검증 — seasonal/time fold와 GBM에서 IDW p=2·nearest 순위 민감도 확인</div></li>
   </ul>
 
   <h2>작업 로그</h2>
   <div class="cards">
+    <a class="card" href="log/2026-07-17-baram-turbine-spatial-pooling-lab.html">
+      <div class="date">2026-07-17 (KST) · feature/mygithub05253-turbine-spatial-pooling</div>
+      <div class="title">Turbine Spatial Pooling Feature Lab</div>
+      <div class="summary">공식 info.xlsx의 17개 터빈 좌표·용량으로 LDAPS/GFS nearest와 IDW를 구현하고 동일 RF·2024 holdout에서 비교했다. all-group IDW p=2는 550개 feature로 total 0.586482→0.592485, FICR 0.305070→0.315406과 모든 target NMAE·FICR·6% 안착률을 개선했다. GFS 전 터빈 동일 nearest grid, LDAPS 경계 민감도와 Group 3 8% 소폭 퇴행을 기록하고 own-group nearest 396개를 축소 대안으로 유지했다.</div>
+    </a>
     <a class="card" href="log/2026-07-17-baram-post-split-feature-sync.html">
       <div class="date">2026-07-17 (KST) · chore/mygithub05253-feature-lab-sync</div>
       <div class="title">독립 저장소 누락 Feature Lab 동기화</div>
