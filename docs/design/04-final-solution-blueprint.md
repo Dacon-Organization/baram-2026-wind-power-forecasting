@@ -253,15 +253,24 @@ scoreboard는 아래 지표를 모두 기록한다.
 
 ### 7.1 단계별 모델
 
-| 단계 | 모델 | 목적 |
-|------|------|------|
-| M0 | baseline RandomForest 재현 | 공식 baseline과 제출 형식 확인 |
-| M1 | Ridge/ElasticNet | 피처 sanity check와 과적합 감지 |
-| M2 | LightGBM/CatBoost/XGBoost 그룹별 모델 | 1차 주력 |
-| M3 | pooled GBM + group id | 그룹 간 공통 기상 반응 학습 |
-| M4 | P1 물리·공간 피처 포함 GBM | 성능 개선 후보 |
-| M5 | fold OOF 기반 ensemble | 그룹·계절 안정성 확보 |
-| M6 | metric-aware calibration | FICR 구간과 capacity normalized error 보정 |
+| 단계 | 모델 | 목적 | 상태 |
+|------|------|------|------|
+| M0 | baseline RandomForest 재현 | 공식 baseline과 제출 형식 확인 | 완료 |
+| M1 | Ridge/ElasticNet | 피처 sanity check와 과적합 감지 | 완료 |
+| M2 | LightGBM/CatBoost 그룹별 모델 | 1차 주력 | **완료 — 채택하지 않음** |
+| M3 | pooled GBM + group id | 그룹 간 공통 기상 반응 학습 | **완료 — `lgbm_pooled` 채택** |
+| M4 | P1 물리·공간 피처 포함 GBM | 성능 개선 후보 | 미착수 |
+| M5 | fold OOF 기반 ensemble | 그룹·계절 안정성 확보 | 미착수 |
+| M6 | metric-aware calibration | FICR 구간과 capacity normalized error 보정 | **다음** |
+
+**M2·M3 결과 (2026-07-27, 노트북 15).** 후보 6종을 사전 등록해 아홉 fold에서 채점한
+결과, 그룹별 GBM(M2)과 pooled GBM(M3)의 **점수 차이는 문턱의 0.23배로 확정할 수 없었다.**
+갈린 것은 부호다 — pooled 둘만 챔피언 대비 9/9 양수였고, 그룹별 둘은 F5·F8에서 음수로
+내려가 설계서 06 5.4절 셋째 칸에 걸렸다. 그래서 M2는 완료하되 채택하지 않는다.
+
+작업 모델은 **`lgbm_pooled`**다. `cat_pooled`와 점수가 구분되지 않는데(문턱의 0.08배)
+학습이 4.56배 싸다. `cat_pooled`는 최종 제출 후보로만 남긴다.
+XGBoost는 후보 수를 누르기 위해 M2에서 제외했다(노트북 15 Decision Box ㉔).
 
 **M2 이후의 채점 조건 (2026-07-27 추가).** M2부터 후보 수가 수십 개로 늘어나므로
 채점 fold를 먼저 고정한다. `src/baram/folds.py`의 **F0~F8 아홉 fold**를 쓰고 판정은

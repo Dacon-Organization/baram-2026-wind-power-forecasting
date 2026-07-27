@@ -82,14 +82,19 @@
     <li><span class="tag t-done">DONE</span><div>local↔Public 캘리브레이션 — 기울기 1.226이 <strong>Public 40% 표본 잡음과 구분되지 않음</strong>(95% 구간 [0.72, 1.28]), 수준 이동의 주 원인은 FICR 계단으로 판별 (노트북 12, 설계서 06 v1.1)</div></li>
     <li><span class="tag t-done">DONE</span><div>시간 강건성 검증 — F0~F4 재계산·실행. <strong>순위가 5개 fold 전부 동일</strong>, 개선분은 fold 간 SD 0.00361로 흔들림. 순위 확정 문턱을 0.00211 → <strong>0.0036</strong>으로 상향 (노트북 13, 설계서 06 v1.2)</div></li>
     <li><span class="tag t-done">DONE</span><div>cross-year 검증 — F5~F8 추가로 <strong>검증 연도를 1개에서 3개로</strong> 확장. 채택 후보의 통제군 대비 개선분은 <strong>9/9 fold 양수</strong>로 살아남았으나, <strong>1·2위 부호 일치는 5/5 → 8/9로 무너져 순위 미확정</strong>으로 되돌림. fold runner를 <code>src/baram/folds.py</code>로 승격 (노트북 14, 설계서 06 v1.3)</div></li>
-    <li><span class="tag t-progress">NEXT</span><div>GBM 도입 — LightGBM/CatBoost 그룹별 모델과 pooled 모델 (블루프린트 M2~M3). <strong>F0~F8 아홉 fold</strong>에서 채점하고 문턱 0.0036과 Decision Box ㉓ 판정 규칙으로 후보를 거른다</div></li>
-    <li><span class="tag t-todo">TODO</span><div>metric-aware calibration — FICR 6%/8% 구간 bias 보정 (M6)</div></li>
+    <li><span class="tag t-done">DONE</span><div>GBM 도입 — 후보 6종을 사전 등록해 F0~F8 아홉 fold에서 채점. 네 GBM 전부 평균 개선분이 문턱의 2.17~2.59배였으나 <strong>부호는 pooled 둘만 9/9</strong>이고 그룹별 둘은 F5·F8에서 음수. <strong>2024만 봤다면 넷 다 통과했을 것</strong>이라 cross-year fold가 도입 직후 값을 했다. 판정표 첫째 칸에도 부호 조건을 걸고(Decision Box ㉕) 작업 모델을 <code>lgbm_pooled</code>로 전환 (노트북 15, 설계서 06 v1.4)</div></li>
+    <li><span class="tag t-progress">NEXT</span><div>metric-aware calibration — FICR 6%/8% 계단 경계에 대한 오차율 분포 보정 (M6). 후보가 많아지므로 처음부터 아홉 fold에서 채점하고 Decision Box ㉕ 규칙으로 판정한다</div></li>
     <li><span class="tag t-todo">TODO</span><div>잔여 물리 피처 — hub-height 보정, air density, wind power density, LDAPS↔GFS source spread</div></li>
     <li><span class="tag t-todo">TODO</span><div>발표·Short Research Paper 산출물 구성</div></li>
   </ul>
 
   <h2>작업 로그</h2>
   <div class="cards">
+    <a class="card" href="log/2026-07-27-baram-gbm-lab.html">
+      <div class="date">2026-07-27 (KST) · 노트북 15 · <code>src/baram/gbm.py</code> · 설계서 04·06 v1.4</div>
+      <div class="title">GBM 도입 — pooled만 아홉 fold를 견딘다</div>
+      <div class="summary">설계서 04 7.1절의 M2(그룹별 GBM)·M3(pooled GBM + group id)를 실행했고, <strong>노트북 14가 만든 cross-year fold가 도입 직후 첫 후보 심사에서 바로 값을 했다.</strong> GBM은 하이퍼파라미터 하나만 흔들어도 후보가 수십 개가 되므로 후보 6종을 <strong>사전 등록</strong>하고 피처셋을 <code>spatial_idw2_all_group</code>으로 고정해 탐색을 하지 않았다(Decision Box ㉔) — fold 성적을 보고 조정하면 그 fold는 검증셋이 아니라 학습셋이 된다. 결과가 <strong>평균과 부호로 갈린다.</strong> 챔피언 <code>rf_spatial</code>은 아홉 fold 어디에서도 1위가 아니고(GBM이 앞선 칸 33/36) 네 GBM 전부 평균 개선분이 문턱의 <strong>2.17~2.59배</strong>다. 그런데 부호까지 보면 <code>cat_pooled</code>·<code>lgbm_pooled</code>만 <strong>9/9</strong>이고 <code>cat_pergroup</code>은 8/9(F5 −0.001419), <code>lgbm_pergroup</code>은 7/9(F5 −0.003825, F8 −0.001356)다. <strong>2024 fold 다섯 개만 봤다면 네 후보 모두 5/5로 통과했을 것</strong>이라, 노트북 14가 경고한 실패 모드가 바로 다음 작업에서 실제로 발생했다. 이 과정에서 <strong>판정 규칙의 구멍</strong>이 드러났다 — 설계서 06 5.4절 첫째 칸이 "간격 &gt; 0.0036이면 확정"이라 크기만 보므로, 그대로 읽으면 부호가 두 fold에서 뒤집히는 <code>lgbm_pergroup</code>도 확정이 된다. 노트북 14 시점에는 크기가 문턱을 넘으면서 부호가 흔들리는 후보가 없어 드러나지 않았을 뿐이다. Decision Box ㉕로 첫째 칸에도 부호 조건을 걸고 셋째 칸을 "부호가 흔들림(<strong>크기와 무관</strong>)"으로 바꿨다. Decision Box ㉖으로 pooled 전환·작업 모델 <code>lgbm_pooled</code>를 확정했는데 <strong>근거의 종류가 중요하다</strong> — pooled를 고른 이유는 점수가 높아서가 아니라(pooled−그룹별 차이는 문턱의 0.23배로 미확정) <strong>챔피언 대비 우위만 아홉 fold를 견뎠기</strong> 때문이다. CatBoost는 점수 차이가 문턱의 0.08배인데 <strong>4.56배</strong> 비싸 작업용에서 제외하고 제출 후보로만 남겼다. 9/9도 균일하지 않다 — <code>cat_pooled</code>의 F8 간격 0.000118은 bootstrap <strong>P=0.523</strong>으로 동전 던지기와 구분되지 않는다. 부수 발견: pooled는 학습 라벨이 없는 그룹도 예측해 F7에서 3그룹 채점이 성립하지만(0.582940), fold가 달라 <strong>수준 비교는 불가능</strong>하므로 "전이가 좋다"고 주장하지 않았다. 노트북 첫 셀에 환경 부트스트랩을 넣어 <strong>로컬과 Colab이 같은 파일</strong>로 돌게 했고, 셀 단위 진행을 보여주는 <code>scripts/run_notebook_live.py</code>를 함께 추가했다. F0 재현 게이트 절대 차이 0.0 · 그림 2종 · 269 tests · 노트북 무결성 16개 통과. markdown 주장 7건을 실제 출력과 대조해 수정했다(비용 비율 5.1→4.56배, <strong>F7 3그룹 점수의 대소 방향이 반대</strong>, 표시하지 않은 FICR 근거를 주장하던 것 등).</div>
+    </a>
     <a class="card" href="log/2026-07-27-baram-cross-year-fold.html">
       <div class="date">2026-07-27 (KST) · 노트북 14 · <code>src/baram/folds.py</code> 승격 · 설계서 04·06 v1.3</div>
       <div class="title">cross-year fold — 다른 해에서는 1·2위가 갈리지 않는다</div>

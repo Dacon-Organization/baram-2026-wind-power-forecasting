@@ -1,6 +1,10 @@
 numpy==1.26.4
 pandas==2.2.2
 scikit-learn==1.5.1
+lightgbm==4.7.0
+# catboost는 CI에 넣지 않는다. graphviz·matplotlib·plotly를 함께 끌고 오는데
+# CI는 노트북을 실행하지 않아 얻는 것이 없다. 노트북 15를 로컬에서 돌리려면
+# `python -m pip install catboost==1.2.10`으로 따로 설치한다.
 pytest==8.3.3
 PyYAML==6.0.3
 openpyxl==3.1.5
