@@ -1,0 +1,13 @@
+# 실행 대기 노트북 등록부
+#
+# 여기 등록된 노트북만 `check_notebook_integrity.py`의 `missing_execution` 검사를
+# 면제받는다. 나머지 검사(error_outputs·replacement_chars·triple_question_runs·
+# consecutive_code_pairs)는 실행 전에도 유효하므로 그대로 적용된다.
+#
+# 등록은 양방향 계약이다. 등록된 노트북이 이미 실행돼 있으면 그것도 실패로 낸다 —
+# 목록이 조용히 낡는 것을 막는다. 실행 결과를 받으면 그 줄을 지우는 것이 "실행 완료"
+# 신호다.
+#
+# 형식: <파일명>  # <왜 실행 전 상태로 머지하는가>
+
+16_metric_aware_calibration_lab.ipynb  # M6 calibration 랩 — 학습 30회로 로컬(22코어) 실행 예정
