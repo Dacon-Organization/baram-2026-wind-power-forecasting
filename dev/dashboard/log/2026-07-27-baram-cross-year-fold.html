@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BARAM cross-year fold 작업 로그</title>
+<style>
+  :root { --bg:#0f1115; --card:#1a1d24; --border:#2a2f3a; --text:#e6e9ef; --muted:#8b93a7; --done:#3fb950; --warn:#d29922; --accent:#58a6ff; --bad:#f85149; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--text); line-height:1.65; }
+  .wrap { max-width:960px; margin:0 auto; padding:36px 20px 64px; }
+  a { color:var(--accent); }
+  h1 { margin:0 0 6px; font-size:1.7rem; }
+  h2 { color:var(--accent); font-size:1.08rem; margin-top:30px; }
+  .sub { color:var(--muted); margin-bottom:24px; }
+  .panel { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px 22px; }
+  .decision { border-left:4px solid var(--done); background:rgba(63,185,80,.08); padding:12px 16px; border-radius:6px; margin:12px 0; }
+  .warn { border-left:4px solid var(--warn); background:rgba(210,153,34,.08); padding:12px 16px; border-radius:6px; margin:12px 0; }
+  .bad { border-left:4px solid var(--bad); background:rgba(248,81,73,.08); padding:12px 16px; border-radius:6px; margin:12px 0; }
+  .scroll { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; margin:10px 0 18px; font-size:.9rem; }
+  th,td { border:1px solid var(--border); padding:8px 10px; text-align:left; }
+  th { background:#11151c; color:#c9d1d9; }
+  li { margin:6px 0; }
+  code { background:#0b0d11; padding:1px 6px; border-radius:4px; }
+  .num { font-variant-numeric:tabular-nums; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>cross-year fold (F5~F8)</h1>
+  <div class="sub">2026-07-27 KST · 노트북 14 · <code>src/baram/folds.py</code> 승격 · 설계서 04·06 갱신 · 브랜치 <code>feature/mygithub05253-cross-year-fold</code></div>
+
+  <div class="panel">
+    <h2>무엇을 했나</h2>
+    <p>노트북 13이 <strong>미해결로 남긴 한계</strong>를 조사했다 — "검증 구간이 전부 2024라
+    다른 해에서도 순위가 유지되는지 답할 수 없다". 조사 결과 <strong>답할 수 있었고,
+    답해보니 문서에 적힌 결론 하나가 뒤집혔다.</strong></p>
+
+    <div class="bad">
+      <p style="margin:0"><strong>"만들 수 없다"는 판정이 너무 셌다.</strong> 근거는
+      "Group 3 라벨이 2023부터라 검증을 2023으로 옮기는 fold를 만들 수 없다"였는데,
+      이 문장이 참이려면 <strong>검증 구간이 2023년 달력 전체</strong>여야 한다.
+      그래야 학습 창이 2022 안에 갇힌다. <strong>2023년 안에서 자르면</strong>
+      2023 전반을 학습하고 후반을 검증할 수 있고, Group 3에도 학습 라벨이 생긴다.</p>
+    </div>
+
+    <h2>막다른 길은 확실히 닫았다 — SCADA</h2>
+    <p>Group 3은 UNISON 5기이고 SCADA에 터빈별 10분 power가 있으므로,
+    2022년 SCADA를 합산해 라벨을 복원할 수 있는지 먼저 확인했다.</p>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>파일</th><th>대응 그룹</th><th>첫 계측</th><th class="num">2022 행</th><th class="num">2023 행</th></tr></thead>
+      <tbody>
+        <tr><td><code>scada_unison_train.csv</code></td><td>Group 3</td><td>2023-01-01 00:10</td><td class="num"><strong>0</strong></td><td class="num">52,559</td></tr>
+        <tr><td><code>scada_vestas_train.csv</code></td><td>Group 1·2</td><td>2022-01-01 01:00</td><td class="num">52,554</td><td class="num">52,560</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>UNISON만 2022가 <strong>0행</strong>이다. 라벨이 빈 게 아니라 <strong>단지 자체의 데이터가 없다</strong> —
+    프록시 라벨 복원 계열은 전부 닫힌다. 반면 NWP는 2022·2023·2024 전 연도가
+    <strong>NaN 0건·cutoff 위반 0건</strong>이라 2022 학습 창에 품질 페널티가 없다
+    (설계서 05 R5의 24% 결측은 2025 test 전용).</p>
+
+    <h2>추가한 fold 4종</h2>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>Fold</th><th>Train</th><th>Valid</th><th>방향</th><th>채점 그룹</th><th>역할</th></tr></thead>
+      <tbody>
+        <tr><td><strong>F5</strong></td><td>2022-01-01 ~ 2023-06-30</td><td>2023-07-01 ~ 12-31</td><td>순</td><td>3</td><td><strong>F4의 연도 미러</strong></td></tr>
+        <tr><td>F6</td><td>2024 전체</td><td>2023 전체</td><td>역</td><td>3</td><td>2023 전체·3그룹</td></tr>
+        <tr><td>F7</td><td>2022 전체</td><td>2023 전체</td><td>순</td><td>2</td><td>순방향으로 2023 전체</td></tr>
+        <tr><td>F8</td><td>2023 전체</td><td>2022 전체</td><td>역</td><td>2</td><td>검증 연도를 2022까지</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p><strong>F5가 핵심이다.</strong> F4와 검증 계절(7~12월)이 같고 검증 행 수가 4,416으로 같으며
+    학습 창 길이는 2024 윤일 하루만 다르다 — <strong>연도만 바뀌는 대조군</strong>이다.
+    노트북 13이 "흔들림의 주범은 계절"이라고 결론냈으므로, 연도 효과를 재려면 계절을 고정해야 한다.
+    <strong>검증 연도가 1개(2024)에서 3개(2022·2023·2024)로 늘었다.</strong></p>
+
+    <div class="decision">
+      <p style="margin:0"><strong>Decision Box ㉒ — 역방향 fold를 쓰되 순위 탐침으로만 쓴다.</strong>
+      역방향 금지의 이유는 (1) 자기회귀 통로와 (2) 운영 불가능성이다.
+      (1)은 이 저장소에 없다 — 노트북 13이 행 간 연산 <strong>0건</strong>을 확인했고
+      설계서 06 2.3절이 라벨 파생 피처 0개를 계약으로 두었다. 타깃이 흘러들 통로가 없다.
+      (2)는 남으므로 <strong>F6·F8의 점수 수준은 쓰지 않고</strong> 같은 fold 안의 순위·부호만 쓴다.</p>
+    </div>
+
+    <h2>결과 1 — 주 결론은 세 연도를 건너 살아남는다</h2>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>preset</th><th class="num">F5<br>2023</th><th class="num">F6<br>2023</th><th class="num">F7<br>2023</th><th class="num">F8<br>2022</th><th>2024 순위</th><th>전체 순위</th></tr></thead>
+      <tbody>
+        <tr><td><code>spatial_idw2_all_group</code></td><td class="num">0.565869</td><td class="num">0.574425</td><td class="num">0.573263</td><td class="num">0.599698</td><td>1위 ×5</td><td><strong>1위 ×8, 2위 ×1</strong></td></tr>
+        <tr><td><code>spatial_nearest_own_group</code></td><td class="num">0.565412</td><td class="num"><strong>0.574596</strong></td><td class="num">0.572281</td><td class="num">0.599694</td><td>2위 ×5</td><td>1위 ×1, 2위 ×7, 3위 ×1</td></tr>
+        <tr><td><code>expanded_vector</code></td><td class="num">0.562739</td><td class="num">0.573804</td><td class="num">0.573013</td><td class="num">0.596418</td><td>3위 ×5</td><td>2위 ×1, 3위 ×8</td></tr>
+        <tr><td><code>official_mean</code></td><td class="num">0.555391</td><td class="num">0.560935</td><td class="num">0.561265</td><td class="num">0.588143</td><td>4위 ×5</td><td>4위 ×9</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="decision">
+      <p style="margin:0"><strong>채택 후보 vs 통제군은 9/9 fold에서 양수</strong>(0.010477~0.021442)이고
+      fold 내부 paired bootstrap에서 <strong>P(Δ&gt;0)=1.000이 전 fold</strong>다.
+      최솟값 0.010477도 문턱 0.0036의 <strong>2.9배</strong>다.
+      spatial pooling이 official_mean보다 낫다는 것은 세 연도·양방향에서 뒤집히지 않는다.</p>
+    </div>
+
+    <h2>결과 2 — 1·2위 순위는 2024 밖에서 무너진다</h2>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>fold</th><th>검증 연도</th><th class="num">1·2위 간격</th><th class="num">bootstrap P(간격&gt;0)</th></tr></thead>
+      <tbody>
+        <tr><td>F0 · F1 · F2 · F3 · F4</td><td>2024</td><td class="num">0.000964 ~ 0.003321</td><td class="num">0.719 ~ 1.000</td></tr>
+        <tr><td>F5</td><td>2023</td><td class="num">0.000457</td><td class="num">0.670</td></tr>
+        <tr><td>F6</td><td>2023</td><td class="num"><strong>−0.000171</strong></td><td class="num"><strong>0.429</strong></td></tr>
+        <tr><td>F7</td><td>2023</td><td class="num">0.000982</td><td class="num">0.811</td></tr>
+        <tr><td>F8</td><td>2022</td><td class="num">0.000004</td><td class="num"><strong>0.511</strong></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="bad">
+      <p style="margin:0"><strong>부호 일치가 5/5에서 8/9로 떨어졌다.</strong>
+      그리고 2023·2022 fold의 bootstrap 확률이 0.429~0.811로 <strong>동전 던지기</strong>에 가깝다.
+      노트북 13의 "부호 5/5 일치"는 <strong>다섯 fold가 같은 해를 검증한 결과</strong>였고,
+      연도라는 교란이 공통으로 실려 있었다. 순방향 fold(F5 0.670, F7 0.811)도 같은 방향을
+      가리키므로 결론이 역방향 fold 하나에 걸려 있지 않다.</p>
+    </div>
+
+    <h2>결과 3 — 문턱은 고칠 필요가 없었다</h2>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>fold 집합</th><th class="num">개수</th><th class="num">채택 후보 Δ SD</th></tr></thead>
+      <tbody>
+        <tr><td>2024 전용 (노트북 13)</td><td class="num">5</td><td class="num">0.003605</td></tr>
+        <tr><td>순방향</td><td class="num">7</td><td class="num">0.003797</td></tr>
+        <tr><td>전체</td><td class="num">9</td><td class="num">0.003459</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>검증 연도를 셋으로 늘려도 SD가 <strong>0.0035~0.0038 사이</strong>에 머물러
+    <strong>문턱 0.0036이 그 사이에 있다.</strong> 계절 성분이 이미 가장 큰 흔들림을
+    담고 있었기 때문이다.</p>
+
+    <h2>결과 4 — 연도는 학습 창과 같은 급으로 흔든다</h2>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>변동 성분</th><th>fold</th><th class="num">폭</th></tr></thead>
+      <tbody>
+        <tr><td>계절 (모델 고정)</td><td>F1 · F2</td><td class="num"><strong>0.00894</strong></td></tr>
+        <tr><td>학습 창 (연도 고정)</td><td>F0 · F3 · F4</td><td class="num">0.00413</td></tr>
+        <tr><td><strong>연도 (계절·창 고정)</strong></td><td>F4 · F5</td><td class="num"><strong>0.00330</strong></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>F5의 Group 3 학습 구간이 6개월(4,343행)뿐이라 이것이 교란일 수 있어
+    <strong>Group 1·2만으로 다시 채점</strong>했다 — 학습 라벨 수가 13,124 ↔ 13,008로 사실상 같다.
+    결과는 F4 Δ 0.014687 → F5 Δ 0.010713으로 <strong>같은 방향에 더 큰 크기</strong>(0.00397)다.
+    Group 3 학습량 탓이 아니라 <strong>연도 자체의 효과</strong>다.</p>
+
+    <h2>Decision Box ㉓ — 1·2위를 미확정으로 되돌리고, 부호 일치에 검증 연도 조건을 건다</h2>
+    <div class="decision">
+      <div class="scroll">
+      <table>
+        <thead><tr><th>상황</th><th>판정</th></tr></thead>
+        <tbody>
+          <tr><td>간격 &gt; 0.0036</td><td>순위 확정</td></tr>
+          <tr><td>간격 ≤ 0.0036 이지만 <strong>검증 연도 둘 이상을 덮는 fold 전부에서</strong> 부호 일치</td><td>잠정 채택</td></tr>
+          <tr><td>간격 ≤ 0.0036 이고 부호가 흔들림</td><td>순위 미확정 — 더 단순한 후보 유지</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p style="margin:0">굵은 부분이 이번에 고친 곳이다. <strong>한 해 안의 fold 다섯 개는
+      독립 증거 다섯 개가 아니다.</strong> 1·2위는 둘째 칸에서 <strong>셋째 칸으로 되돌아간다.</strong></p>
+    </div>
+    <div class="warn">
+      <p style="margin:0"><strong>제출물은 바꾸지 않는다.</strong> <code>spatial_idw2_all_group</code>는
+      통제군 대비 개선분이 아홉 fold에서 확정적이라 채택 유지 근거가 충분하고, 교체 근거도 없다 —
+      뒤집힌 fold의 간격이 −0.000171이고 bootstrap P가 0.429라 "2위가 더 낫다"도 잡음과 구분되지 않는다.
+      바뀌는 것은 <strong>주장의 범위</strong>다: "1위 프리셋"이 아니라 "통제군보다 확실히 나은 두 프리셋 중 하나".</p>
+    </div>
+
+    <h2>코드 승격</h2>
+    <ul>
+      <li><code>src/baram/folds.py</code> 신규 — 노트북 13의 로컬 <code>TRAIN_WINDOWS</code>·<code>FOLDS</code>·<code>runWindow</code>를 승격.
+      fold 정의를 <strong>계약</strong>으로 두고 <code>assert_fold_contract()</code>가 비겹침·시간 순서·채점 그룹 존재를 검사해 위반 시 <code>ValueError</code></li>
+      <li><code>run_window(..., make_estimator=...)</code> — estimator를 주입 가능하게 해 GBM이 같은 runner를 재사용한다</li>
+      <li><code>metrics.metric_over(answer, pred, columns)</code> 신규 — 그룹 부분집합 채점. 공식 <code>metric()</code>은 한 글자도 건드리지 않았다</li>
+      <li><code>tests/test_folds.py</code> 신규 19건 — 공식 원자료 없이 합성 라벨로 계약 검증</li>
+    </ul>
+
+    <h2>그림 4종</h2>
+    <ul>
+      <li>fold 9개 시간축 배치 — 검증 연도별 색, 역방향은 빗금</li>
+      <li>fold별 점수 수준과 순위 궤적 — 2024 구간에서 수평, 그 밖에서 교차</li>
+      <li>1·2위 간격 ± bootstrap SD와 P(간격&gt;0) — 오차 범위가 0을 가로지른다</li>
+      <li>변동 성분 3종(계절·연도·학습 창)과 F4↔F5 연도 대조(3그룹 vs Group 1·2)</li>
+    </ul>
+
+    <h2>문서 갱신</h2>
+    <ul>
+      <li><code>06-preprocessing-guardrails.md</code> v1.2 → <strong>v1.3</strong> — 5.2절 F5~F8 결과와 SCADA 막다른 길,
+      5.4절 판정 규칙에 검증 연도 조건 추가·현재 판정표 갱신, 0절 요약과 6절 용어, 7절 체크리스트 반영</li>
+      <li><code>04-final-solution-blueprint.md</code> — 7.1절에 M2 이후 채점 fold를 F0~F8로 고정</li>
+      <li><code>docs/design/README.md</code> — 06 문서 요약 갱신</li>
+    </ul>
+
+    <h2>검증</h2>
+    <ul>
+      <li>F0 재현 게이트 — 프리셋 4종 전부 <strong>절대 차이 0.0</strong> (1e-9). 승격한 runner가 같은 코드 경로</li>
+      <li>fold 계약 — 9개 fold 전부 비겹침 0·방향 일치·채점 그룹 존재 (코드 강제)</li>
+      <li>NWP 전 연도 NaN 0건·cutoff 위반 0건</li>
+      <li><code>python -m pytest -q</code> — <strong>256 passed</strong> (237 → +19)</li>
+      <li><code>python scripts/check_notebook_integrity.py</code> — <strong>15개 통과</strong></li>
+      <li>산출물 파일 없음(분석 전용) · 원자료 무수정 · 모델·제출물 미저장</li>
+    </ul>
+
+    <div class="warn">
+      <p style="margin:0"><strong>한계.</strong> fold 아홉 개는 서로 독립이 아니다 —
+      F0·F1·F2가 학습 창을 공유하고 F3·F8도 같은 창을 쓴다. 부호 일치 8/9를 독립 시행으로 셈하면 안 된다.
+      2022 검증은 2그룹뿐이고 Group 3의 2022는 어떤 방법으로도 채점할 수 없다.
+      역방향 fold의 점수 수준은 쓰지 않았다. 모델은 RandomForest 공식 파라미터 그대로이며 GBM은 범위 밖이다.</p>
+    </div>
+
+    <h2>다음 단계</h2>
+    <div class="decision">
+      <p style="margin:0">설계서 04 7.1절 M2 — LightGBM/CatBoost 도입(노트북 15).
+      <strong>이번 결과가 그 작업의 전제를 바꾼다.</strong> GBM은 후보를 수십 개로 늘리는데,
+      2024만 검증하는 fold 세트는 "부호 전부 일치"라는 가짜 확신을 계속 발급한다.
+      이 노트북이 그 실패 모드를 실물로 보였으므로, GBM 후보는 처음부터
+      <strong>F0~F8 아홉 fold</strong>에서 채점하고 Decision Box ㉓의 규칙으로 판정한다.
+      <code>requirements-ci.txt</code>에 lightgbm/catboost 추가 시 dependabot 보류 정책과의 충돌 여부를 먼저 확인한다.</p>
+    </div>
+  </div>
+</div>
+</body>
+</html>
