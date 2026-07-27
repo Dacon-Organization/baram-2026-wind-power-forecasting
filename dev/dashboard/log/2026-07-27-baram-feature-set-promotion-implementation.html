@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BARAM 피처셋 승격 구현과 첫 제출 후보 작업 로그</title>
+<style>
+  :root { --bg:#0f1115; --card:#1a1d24; --border:#2a2f3a; --text:#e6e9ef; --muted:#8b93a7; --done:#3fb950; --warn:#d29922; --accent:#58a6ff; --bad:#f85149; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--text); line-height:1.65; }
+  .wrap { max-width:960px; margin:0 auto; padding:36px 20px 64px; }
+  a { color:var(--accent); }
+  h1 { margin:0 0 6px; font-size:1.7rem; }
+  h2 { color:var(--accent); font-size:1.08rem; margin-top:30px; }
+  h3 { font-size:.98rem; margin:22px 0 8px; color:#c9d1d9; }
+  .sub { color:var(--muted); margin-bottom:24px; }
+  .panel { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px 22px; }
+  .decision { border-left:4px solid var(--done); background:rgba(63,185,80,.08); padding:12px 16px; border-radius:6px; margin:12px 0; }
+  .warn { border-left:4px solid var(--warn); background:rgba(210,153,34,.08); padding:12px 16px; border-radius:6px; margin:12px 0; }
+  .scroll { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; margin:10px 0 18px; font-size:.9rem; }
+  th,td { border:1px solid var(--border); padding:8px 10px; text-align:right; }
+  th:first-child,td:first-child { text-align:left; }
+  th { background:#11151c; color:#c9d1d9; }
+  .up { color:var(--done); font-weight:600; }
+  .down { color:var(--bad); font-weight:600; }
+  .pill { display:inline-block; padding:1px 9px; border-radius:999px; font-size:.78rem; font-weight:600; }
+  .p-pass { background:rgba(63,185,80,.16); color:var(--done); }
+  .p-wait { background:rgba(210,153,34,.16); color:var(--warn); }
+  li { margin:6px 0; }
+  code { background:#0b0d11; padding:1px 6px; border-radius:4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>피처셋 승격 구현과 첫 제출 후보 준비</h1>
+  <div class="sub">2026-07-27 KST · 설계서 05 v1.0 → v1.1 · 브랜치 <code>feature/mygithub05253-feature-set-promotion</code></div>
+
+  <div class="panel">
+    <h2>완료 범위</h2>
+    <ul>
+      <li>노트북 랩에만 있던 피처 3종을 production 파이프라인으로 승격하고, 피처셋을 CLI 한 줄로 선택할 수 있게 만들었다.</li>
+      <li>검증 노트북 09·10·11을 서사 규약대로 작성하고 <strong>실제 실행해 출력을 남긴 상태</strong>로 저장했다.</li>
+      <li>G1~G5 게이트를 모두 통과했다. 핵심인 G3에서 채택 후보의 2024 holdout 점수가 노트북 08과 <strong>절대 차이 0.0</strong>으로 재현됐다.</li>
+      <li>제출 후보 S1·S2를 production CLI로 만들어 validator를 통과시키고 ledger 초안까지 준비했다. <strong>제출 버튼은 누르지 않았다.</strong></li>
+    </ul>
+
+    <h2>게이트 결과</h2>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>ID</th><th>게이트</th><th>결과</th><th>근거</th></tr></thead>
+      <tbody>
+        <tr><td>G1</td><td>전체 테스트</td><td><span class="pill p-pass">통과</span></td><td><code>pytest -q</code> → 237 passed</td></tr>
+        <tr><td>G2</td><td>golden 회귀</td><td><span class="pill p-pass">통과</span></td><td><code>official_mean</code> 파생 계약이 legacy 상수와 바이트 동일</td></tr>
+        <tr><td>G3</td><td>점수 재현</td><td><span class="pill p-pass">통과</span></td><td>전체 정밀도 기준 3종 절대 차이 0.0</td></tr>
+        <tr><td>G4</td><td>노트북 무결성</td><td><span class="pill p-pass">통과</span></td><td>00~11 12개, 미실행·에러·연속 코드쌍 모두 0</td></tr>
+        <tr><td>G5</td><td>제출물 검증</td><td><span class="pill p-pass">통과</span></td><td>validator 통과, registry status <code>submission_validated</code></td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2>2024 holdout 점수 체인</h2>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>feature_set</th><th>features</th><th>total</th><th>1-NMAE</th><th>FICR</th><th>Δ vs 통제군</th></tr></thead>
+      <tbody>
+        <tr><td>lab_official_mean (랩 통제군)</td><td>74</td><td>0.576938</td><td>0.863228</td><td>0.290647</td><td>기준</td></tr>
+        <tr><td>official_mean (production 기본값)</td><td>76</td><td>0.577743</td><td>0.863317</td><td>0.292168</td><td class="up">+0.000805</td></tr>
+        <tr><td>expanded_vector</td><td>319</td><td>0.586482</td><td>0.867895</td><td>0.305070</td><td class="up">+0.009545</td></tr>
+        <tr><td><strong>spatial_idw2_all_group</strong></td><td><strong>550</strong></td><td><strong>0.592485</strong></td><td>0.869565</td><td>0.315406</td><td class="up"><strong>+0.015548</strong></td></tr>
+        <tr><td>spatial_nearest_own_group</td><td>396</td><td>0.589828</td><td>0.868767</td><td>0.310890</td><td class="up">+0.012891</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>채택 후보의 개선분 +0.015548을 분해하면 1-NMAE 기여 +0.003169, FICR 기여 +0.012380으로
+    <strong>FICR 기여율이 79.6%</strong>다. 공식 산식이 오차율 6%/8% 계단 함수라 평균 오차 감소보다
+    정산 구간 진입이 점수에 크게 반영된다. 동시에 임계값 근처의 불안정성을 뜻하므로,
+    local Δ가 Public에서 그대로 재현되지 않을 수 있는 첫 번째 이유이기도 하다.</p>
+
+    <h2>구현 중 발견해 정정한 것</h2>
+
+    <div class="warn">
+      <h3>① 게이트 허용 오차만으로는 판정이 성립하지 않는다</h3>
+      <p>설계서 7.2절의 <code>1e-9</code>를 문서 표기값 <code>0.592485</code>에 적용하면
+      <strong>정상 재현이 실패로 나온다.</strong> 6자리 반올림 자체가 최대 5e-7의 오차를 만들어
+      게이트를 자동으로 넘기기 때문이다. 노트북 08 출력에 남은 전체 정밀도
+      <code>0.5924854297224146</code>을 기준으로 삼아야 판정이 성립한다.
+      재현성 게이트는 허용 오차만이 아니라 <strong>비교 대상</strong>까지 명세해야 한다는 교훈이다.</p>
+    </div>
+
+    <div class="warn">
+      <h3>② 라벨 시각 규약이 만든 2025 경계 행 1건</h3>
+      <p>공식 <code>train_labels</code>는 2022-01-01 <strong>01:00</strong>에서 시작하고 각 날의 00:00을
+      전날 마지막 시각으로 센다. 그래서 마지막 행이 2025-01-01 00:00으로 남고 연도별 행 수가
+      8,759 / 8,760 / 8,784 / <strong>1</strong>이 된다. holdout을 <code>year &gt;= 2024</code>로 잡으면
+      8,785행이 되어 노트북 08의 8,784행과 어긋나고 NMAE 분모가 바뀐다.
+      <code>year == 2024</code>로 잘라 경계 행을 어느 쪽에도 넣지 않았다.</p>
+    </div>
+
+    <div class="warn">
+      <h3>③ S1↔S2 비교 기준선이 랩 통제군이 아니다</h3>
+      <p>설계서 8절은 Public Δ를 local Δ <code>+0.015547</code>과 비교하라고 적었으나, 이 값은
+      랩 통제군(74개, lead 없음) 기준이다. S1이 실제로 쓰는 것은 production 기본값
+      <code>official_mean</code>(76개, lead 포함)이므로 대조할 값은 <strong>+0.014742</strong>
+      (0.592485 − 0.577743)다. lead feature 2개가 만든 +0.000805를 빼지 않으면 기울기 추정이
+      그만큼 낙관적으로 계산된다.</p>
+    </div>
+
+    <h2>검증 노트북</h2>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>노트북</th><th>닫은 질문</th><th>Decision Box</th><th>셀</th></tr></thead>
+      <tbody>
+        <tr><td>09 피처셋 계약 랩</td><td>피처셋을 config로 표현해도 재현성 계약이 유지되는가</td><td>①~⑤</td><td>29</td></tr>
+        <tr><td>10 조립 파이프라인 랩</td><td>조립 순서와 fit 경계가 train/test 대칭을 보장하는가</td><td>⑥~⑩</td><td>33</td></tr>
+        <tr><td>11 승격 스코어보드</td><td>랩 점수를 재현하고 제출물을 만들 수 있는가</td><td>⑪~⑮</td><td>29</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3>노트북 10의 핵심 실증</h3>
+    <ul>
+      <li><strong>조립 순서는 계약이다.</strong> wind vector 파생(①)을 끄자 공간 pooling(③) 대상 raw 변수가
+      77 → 65로 줄고 최종 피처가 550 → 466이 됐다. ①과 ③은 독립 스위치가 아니라 ①의 출력이 ③의 입력이다.</li>
+      <li><strong>컬럼 구획</strong>이 <code>calendar 9 / ldaps 집계 133 / gfs 집계 177 / ldaps pooling 99 / gfs pooling 132</code>
+      = 550으로 연속 블록을 이룬다. <code>max_features="sqrt"</code>인 RandomForest는 컬럼 순서에 의존하므로 이 배치가 재현의 전제다.</li>
+      <li><strong>fit 경계</strong>가 감시된다 — 격자 좌표 이동·격자 소멸·스키마 위반 drift 3종이 모두 예외로 차단됐다.</li>
+      <li><strong>own-group superset</strong> 550 → target별 396 슬라이스에서 median 최대 절대차 0.0으로 등가성 확인.</li>
+      <li>train 550개 컬럼에는 결측이 없는데 <strong>test는 133개 컬럼(24%)에 결측</strong>이 있다(설계서 R5).
+      2025년 제출용 피처의 4분의 1은 관측이 아니라 2022~2024년 중앙값이며, local holdout에는 없는 조건이다.</li>
+    </ul>
+
+    <h2>제출 후보</h2>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>슬롯</th><th>피처셋</th><th>features</th><th>local holdout</th><th>목적</th><th>상태</th></tr></thead>
+      <tbody>
+        <tr><td>S1</td><td>official_mean</td><td>76</td><td>0.577743</td><td>형식·인코딩·행수 smoke</td><td><span class="pill p-wait">제출 대기</span></td></tr>
+        <tr><td>S2</td><td>spatial_idw2_all_group</td><td>550</td><td>0.592485</td><td>채택 후보</td><td><span class="pill p-wait">제출 대기</span></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <ul>
+      <li>두 파일 모두 8,760행, validator 통과, SHA-256이 서로 다르다.</li>
+      <li>예측값 상관계수는 0.99지만 절대차 평균이 510~590 kWh다. 설비용량 대비 2.4~2.7%로,
+      정산 경계가 6%인 것을 생각하면 작지 않다. 두 모델의 차이는 크기가 아니라 <strong>경계를 넘나드는 방식</strong>에 있다.</li>
+      <li>제출 모델은 holdout 실험 모델이 아니라 라벨 전체 26,304행으로 재학습한 것이다.
+      라벨 마지막 시각(2025-01-01 00:00)이 제출 시간축 첫 시각(01:00)보다 앞서 look-ahead는 없다.
+      대가는 <strong>제출 모델 자체가 검증된 적 없다</strong>는 것이며 ledger에 명시했다.</li>
+      <li>산출물은 <code>outputs/</code> 아래에만 생성되며 <code>.gitignore</code> 대상이라 커밋되지 않는다.</li>
+    </ul>
+
+    <h2>커밋</h2>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>SHA</th><th>커밋</th><th>동작 변화</th></tr></thead>
+      <tbody>
+        <tr><td><code>abf022f</code></td><td>📝 Docs: 설계서 05 추가</td><td>없음</td></tr>
+        <tr><td><code>50ef870</code></td><td>✨ Feat: FeatureSetConfig와 프리셋 4종·YAML 오버라이드</td><td>없음</td></tr>
+        <tr><td><code>d1ed1e5</code></td><td>✨ Feat: 터빈 메타데이터 로더 승격</td><td>없음</td></tr>
+        <tr><td><code>ea068fd</code></td><td>✨ Feat: 피처 파이프라인 조립기 추가</td><td>없음</td></tr>
+        <tr><td><code>682ac05</code></td><td>♻️ Refactor: bundle에 target별 feature 컬럼</td><td>없음</td></tr>
+        <tr><td><code>885f311</code></td><td>✨ Feat: preprocessing contract 파생과 metadata 1.1</td><td>hash 경로 변경, 값 동일</td></tr>
+        <tr><td><code>9b69bed</code></td><td>✨ Feat: train/inference CLI 피처셋 연결</td><td class="up">여기서 처음 동작 변화</td></tr>
+        <tr><td><code>af709de</code></td><td>📝 Docs: 검증 노트북 09</td><td>없음</td></tr>
+        <tr><td><code>d307655</code></td><td>📝 Docs: 검증 노트북 10</td><td>없음</td></tr>
+        <tr><td><code>0f52b15</code></td><td>📝 Docs: 검증 노트북 11과 G3 통과</td><td>없음</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>7번 커밋 이전까지는 production 경로가 전혀 바뀌지 않는다. 기본값이 <code>official_mean</code>이라
+    CLI 인자를 빼면 승격 전과 동일하게 동작하며, 문제가 생기면 <code>9b69bed</code> 하나만 되돌려도 복귀한다.</p>
+
+    <h2>다음 단계</h2>
+    <div class="decision">
+      <ol>
+        <li><strong>사람이 제출 버튼을 누른다.</strong> S1·S2를 같은 날 올리고 ledger의
+        <code>public_score</code>·<code>dacon_submission_id</code>를 채운다.</li>
+        <li>Public Δ와 local Δ <strong>+0.014742</strong>를 비교해 처음으로 기울기를 추정한다.
+        비율이 1보다 한참 작으면 2024 holdout 재사용에 따른 낙관 편향(Dwork 등, <em>The reusable holdout</em>)의 증거다.</li>
+        <li>기울기를 얻은 뒤 seasonal/time fold(F1~F4) → GBM 도입 → metric-aware calibration 순으로 진행한다.</li>
+      </ol>
+    </div>
+    <p class="sub" style="margin-top:18px">
+      브랜치는 origin에 push 완료. PR은 이 로그와 설계서 v1.1 커밋 후 생성한다.
+      dependabot PR #2~#5는 설계서 R8에 따라 대회 종료까지 보류한다.
+    </p>
+  </div>
+</div>
+</body>
+</html>
