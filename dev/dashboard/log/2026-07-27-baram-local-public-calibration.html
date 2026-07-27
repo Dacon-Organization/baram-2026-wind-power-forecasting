@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BARAM local↔Public 캘리브레이션 작업 로그</title>
+<style>
+  :root { --bg:#0f1115; --card:#1a1d24; --border:#2a2f3a; --text:#e6e9ef; --muted:#8b93a7; --done:#3fb950; --warn:#d29922; --accent:#58a6ff; --bad:#f85149; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--text); line-height:1.65; }
+  .wrap { max-width:960px; margin:0 auto; padding:36px 20px 64px; }
+  a { color:var(--accent); }
+  h1 { margin:0 0 6px; font-size:1.7rem; }
+  h2 { color:var(--accent); font-size:1.08rem; margin-top:30px; }
+  .sub { color:var(--muted); margin-bottom:24px; }
+  .panel { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px 22px; }
+  .decision { border-left:4px solid var(--done); background:rgba(63,185,80,.08); padding:12px 16px; border-radius:6px; margin:12px 0; }
+  .warn { border-left:4px solid var(--warn); background:rgba(210,153,34,.08); padding:12px 16px; border-radius:6px; margin:12px 0; }
+  .bad { border-left:4px solid var(--bad); background:rgba(248,81,73,.08); padding:12px 16px; border-radius:6px; margin:12px 0; }
+  .scroll { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; margin:10px 0 18px; font-size:.9rem; }
+  th,td { border:1px solid var(--border); padding:8px 10px; text-align:left; }
+  th { background:#11151c; color:#c9d1d9; }
+  li { margin:6px 0; }
+  code { background:#0b0d11; padding:1px 6px; border-radius:4px; }
+  .num { font-variant-numeric:tabular-nums; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>local↔Public 캘리브레이션</h1>
+  <div class="sub">2026-07-27 KST · 노트북 12 · 설계서 06 v1.1 · 브랜치 <code>feature/mygithub05253-local-public-calibration</code></div>
+
+  <div class="panel">
+    <h2>무엇을 했나</h2>
+    <p>제출 2건의 Public 점수를 ledger와 run registry에 반입하고, local↔Public 기울기를 추정했다.
+    결론은 작업 지시의 전제를 한 칸 옮긴다 — <strong>기울기에는 설명할 괴리가 없었다.</strong></p>
+
+    <div class="bad">
+      <p style="margin:0"><strong>분석 방법을 바꾼 규칙 한 줄.</strong> 대회 안내문의
+      <code>Public Score = 전체 평가 데이터 중 사전 샘플링된 40%</code>. Public은 전수 채점이 아니라
+      <strong>40% 표본</strong>이므로 자체 분산을 갖는다. 이 사실을 모르면 표본 잡음을 원인으로 착각한다.</p>
+    </div>
+
+    <h2>반입한 Public 점수</h2>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>slot</th><th>제출 ID</th><th>피처셋</th><th class="num">local</th><th class="num">Public</th><th class="num">1-NMAE</th><th class="num">FICR</th></tr></thead>
+      <tbody>
+        <tr><td>S1</td><td>1502789</td><td><code>official_mean</code></td><td class="num">0.577743</td><td class="num">0.588303</td><td class="num">0.864425</td><td class="num">0.312180</td></tr>
+        <tr><td>S2</td><td>1502791</td><td><code>spatial_idw2_all_group</code></td><td class="num">0.592485</td><td class="num">0.606374</td><td class="num">0.869899</td><td class="num">0.342849</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="sub">전사 검증: 두 행 모두 <code>total = 0.5 × (1-NMAE) + 0.5 × FICR</code> 항등식을 만족했다.
+    S2가 최종 채점 파일로 선택된 상태다.</p>
+
+    <h2>기울기 — 지표별로 방향이 다르다</h2>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>지표</th><th class="num">Δ local</th><th class="num">Δ Public</th><th class="num">기울기</th><th>수준 이동(S2)</th></tr></thead>
+      <tbody>
+        <tr><td>total</td><td class="num">+0.014743</td><td class="num">+0.018071</td><td class="num">1.226</td><td class="num">+0.013889</td></tr>
+        <tr><td>1-NMAE</td><td class="num">+0.006248</td><td class="num">+0.005473</td><td class="num">0.876</td><td class="num">+0.000334</td></tr>
+        <tr><td>FICR</td><td class="num">+0.023238</td><td class="num">+0.030669</td><td class="num">1.320</td><td class="num">+0.027443</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>총점 기울기 1.226은 <strong>1-NMAE 감쇠(0.876)와 FICR 증폭(1.320)의 합성</strong>이다.
+    총점만 봤다면 "Public이 개선을 크게 쳐준다"로 끝났을 것이다.</p>
+
+    <h2>핵심 — 40% 표본 잡음을 4,000회 부트스트랩으로 측정</h2>
+    <p>2024 holdout 8,784행에서 40%(3,514행)를 비복원 추출해 두 모델을 <strong>같은 표본</strong>으로 채점,
+    4,000회 반복했다. 벡터화한 산식은 <code>metric()</code>과 절대 차이 0으로 대조했다.</p>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>측정 대상</th><th class="num">표준편차</th></tr></thead>
+      <tbody>
+        <tr><td>단일 제출의 total (40% 표본)</td><td class="num">0.00321 / 0.00326</td></tr>
+        <tr><td>두 제출의 차이 Δ (paired)</td><td class="num"><strong>0.00211</strong></td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="decision">
+      <p style="margin:0"><strong>판정.</strong> 실측 ΔPublic은 Δlocal보다 +0.003328 크지만 이는
+      paired 잡음의 <strong>1.58 SD</strong>이며 같은 방향 확률이 5.35%(양측 10.7%)다.
+      기울기로 환산한 40% 표본 95% 구간은 <strong>[0.716, 1.279]</strong>로 <strong>1.0을 포함한다.</strong><br>
+      → 기울기 1.226이 1과 다르다고 말할 근거가 없다. 점 두 개는 자유도가 0이라
+      오차를 데이터 밖에서 가져와야 하며, 그 출처가 "40% 표본"이라는 규칙이었다.</p>
+    </div>
+
+    <h2>원인 판별 — 설명이 필요한 것은 수준 이동이었다</h2>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>이유</th><th>예측하는 현상</th><th>실측</th><th>판정</th></tr></thead>
+      <tbody>
+        <tr><td>Public 40% 표본 분산 <em>(신규)</em></td><td>Δ가 SD 0.0021로 흔들린다</td><td class="num">괴리 1.58 SD</td><td><strong>기울기 괴리를 단독 설명</strong></td></tr>
+        <tr><td>FICR 계단 함수</td><td>수준 이동이 FICR에 몰린다</td><td class="num">1-NMAE +0.0003 / FICR +0.0274</td><td><strong>수준 이동의 주 원인</strong></td></tr>
+        <tr><td>학습 구간 차이</td><td>1-NMAE와 FICR이 함께 오른다</td><td class="num">1-NMAE 이동 ≈ 0</td><td>흔적 없음</td></tr>
+        <tr><td>2025 결측 133컬럼</td><td>Public이 local보다 낮아진다</td><td class="num">둘 다 +0.011~0.014</td><td>방향이 반대</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>계단 진단은 행 단위로 확인됐다. 평가 대상 14,531행 중 <strong>21.0%(3,046행)가 단가 구간을 이동</strong>했고,
+    좋아진 1,699행과 나빠진 1,347행이 상쇄되어 순증은 352행(이동의 11.6%)뿐이다.
+    S2 평가 행의 18.5%가 6%·8% 경계 ±1%p 안에 있다.
+    <strong>FICR은 개선과 잡음을 함께 증폭하며, 잡음 0.00211이 이 구조에서 나온다.</strong></p>
+
+    <h2>Decision Box ⑯~⑱</h2>
+    <ul>
+      <li><strong>⑯ 기울기는 점추정이 아니라 구간으로 다룬다.</strong> 구간이 1.0을 포함하는 동안
+      local Δ에 계수를 곱해 Public을 예측하지 않는다. 잡음을 계수로 승격시키면 후보 간 간격이 작을 때 순위를 뒤집는다.</li>
+      <li><strong>⑰ 최종 채점 파일을 리더보드 자동 선택에 맡기지 않는다.</strong> 규칙은 "순위가 가장 높은 파일이
+      자동 선택"인데 1차 평가는 Private 100%다. 자동 선택은 40% 표본 최고점을 고르는 규칙이며
+      단일 제출 표준편차 0.0032 대비 후보 간 최소 간격이 0.00056(0.18배)이라 사실상 동전 던지기다.</li>
+      <li><strong>⑱ 후보 순위는 "간격 &gt; 잡음"일 때만 확정한다.</strong> 다음 작업 F1~F4의 목적을
+      "점수를 올리는 것"이 아니라 <strong>fold 분산을 재서 순위 확정의 문턱을 정하는 것</strong>으로 둔다.</li>
+    </ul>
+
+    <h2>그림 5종</h2>
+    <ul>
+      <li>local 두 점과 Public 두 점 (total·1-NMAE·FICR 3패널, <code>y=x</code> 기준선)</li>
+      <li>개선분과 수준 이동의 지표별 분해</li>
+      <li><strong>40% 표본 부트스트랩</strong> — Δ 표본분포와 실측 ΔPublic 위치, 수준 분포와 Public 수준</li>
+      <li><strong>FICR 계단</strong> — 오차율 히스토그램에 4원/3원/0원 구간 음영, S1→S2 단가 구간 전이 행렬</li>
+      <li>2024 holdout 예측과 2025 제출 예측 분포 비교 (그룹별)</li>
+    </ul>
+
+    <h2>검증</h2>
+    <ul>
+      <li>재현 게이트 — 두 프리셋 모두 노트북 08 전체 정밀도와 <strong>절대 차이 0.0</strong> (1e-9 게이트 통과)</li>
+      <li><code>python -m pytest -q</code> — <strong>237 passed</strong></li>
+      <li><code>python scripts/check_notebook_integrity.py</code> — <strong>13개 통과</strong>
+      (missing_execution 0 / error_outputs 0 / consecutive_code_pairs 0)</li>
+      <li>markdownlint — 0 issues</li>
+      <li>holdout 실제값 SHA-256 실행 전후 불변, 원자료·제출 CSV 무수정</li>
+      <li>run registry <code>RUN_REGISTRY_COLUMNS</code> 37개 schema 유지 (컬럼 추가 없이 값만 반입)</li>
+    </ul>
+
+    <div class="warn">
+      <p style="margin:0"><strong>한계.</strong> 잡음을 2025가 아니라 2024에서 쟀다 — 2025 실제값이 없기 때문이다.
+      수준 이동의 원인은 소거법으로 좁혔을 뿐 2025가 실제로 어떤 해였는지는 확인할 수 없다.
+      그리고 우리가 본 것은 40%이고 <strong>1차 평가는 나머지 60%(Private)</strong>다.
+      이 작업의 어떤 숫자도 Private의 예측이 아니다.</p>
+    </div>
+
+    <h2>다음 단계</h2>
+    <div class="decision">
+      <p style="margin:0">설계서 05 12절 P1 — seasonal·time fold(F1~F4). 프리셋 4종이 2024 단일 holdout
+      밖에서도 같은 순위를 유지하는지 확인하고, 이번에 얻은 문턱 <strong>paired 잡음 SD 0.00211</strong>을
+      fold 간 분산과 비교한다. 남은 제출 슬롯 3회는 잡음 재측정에 쓰지 않는다.</p>
+    </div>
+  </div>
+</div>
+</body>
+</html>

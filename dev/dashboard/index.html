@@ -46,8 +46,8 @@
   </div>
 
   <h2>전체 진척률</h2>
-  <div class="bar"><i style="width:77%"></i></div>
-  <div class="barlabel">공식 데이터 공개 후 metric/baseline 재현, train/inference 분리, submission ledger·validator·model registry를 완료했다. Weather/Wind feature lab에 이어 공식 터빈 좌표 기반 spatial pooling을 검증했으며, 동일 2024 holdout total score는 공식 mean 0.576938에서 vector 0.586482, all-group IDW p=2 0.592485까지 개선됐다. 다만 이 개선분은 아직 production 파이프라인에 반영되지 않았고 리더보드 제출도 0회다. 2026-07-27 설계에서 남은 작업을 승격·제출, seasonal fold, GBM, calibration, 잔여 물리 피처, 발표 산출물로 구체화하며 분모를 재산정했다. 마감 2026-08-14 10:00 KST.</div>
+  <div class="bar"><i style="width:82%"></i></div>
+  <div class="barlabel">공식 데이터 공개 후 metric/baseline 재현, train/inference 분리, submission ledger·validator·model registry를 완료했다. Weather/Wind feature lab에 이어 공식 터빈 좌표 기반 spatial pooling을 검증했고, 랩 개선분을 production 파이프라인으로 승격해 2024 holdout total 0.576938 → 0.592485를 재현했다. <strong>2026-07-27 첫 리더보드 제출 2건 완료</strong> — Public은 S1 0.588303, S2 0.606374이며 ledger·registry에 반입됐다. 캘리브레이션 분석 결과 <strong>local↔Public 기울기 1.226은 Public 40% 표본 잡음(paired SD 0.00211)과 구분되지 않으며</strong>, 수준 이동의 주 원인은 FICR 계단 함수로 판별됐다. 다음은 seasonal/time fold(F1~F4)로 순위 확정 문턱을 정하는 것이다. 마감 2026-08-14 10:00 KST · 제출 오늘 2/5회 사용.</div>
 
 
   <h2>마일스톤 파이프라인</h2>
@@ -78,8 +78,9 @@
     <li><span class="tag t-done">DONE</span><div>피처셋 승격·첫 제출 설계 — 프리셋 4종, YAML 오버라이드, 재현성 계약 파생, 롤백 전략 확정</div></li>
     <li><span class="tag t-done">DONE</span><div>피처셋 승격 구현 — CLI <code>--feature-set</code> 연결, 검증 노트북 09·10·11, G1~G5 전부 통과, 채택 후보 2024 holdout 0.592485 절대 차이 0.0으로 재현</div></li>
     <li><span class="tag t-done">DONE</span><div>전처리 가드레일 문서화 — 허용/금지 경계, fit 범위 규칙, 코드 대응표, 과적합 위험 평가, 용어 규범, 자가 점검 체크리스트 (설계서 06)</div></li>
-    <li><span class="tag t-progress">NEXT</span><div>첫 리더보드 제출 — S1(official_mean)·S2(spatial_idw2_all_group) 제출 후보 준비 완료, <strong>사람이 제출 버튼을 누르고</strong> ledger의 Public 점수를 채워 local Δ +0.014742에 대응하는 기울기 추정</div></li>
-    <li><span class="tag t-todo">TODO</span><div>시간 강건성 검증 — seasonal/time fold(F1~F4)에서 프리셋 4종 민감도 확인</div></li>
+    <li><span class="tag t-done">DONE</span><div>첫 리더보드 제출 — S1(official_mean) Public 0.588303, S2(spatial_idw2_all_group) Public 0.606374, ledger·registry 반입 완료</div></li>
+    <li><span class="tag t-done">DONE</span><div>local↔Public 캘리브레이션 — 기울기 1.226이 <strong>Public 40% 표본 잡음과 구분되지 않음</strong>(95% 구간 [0.72, 1.28]), 수준 이동의 주 원인은 FICR 계단으로 판별 (노트북 12, 설계서 06 v1.1)</div></li>
+    <li><span class="tag t-progress">NEXT</span><div>시간 강건성 검증 — seasonal/time fold(F1~F4)에서 프리셋 4종 민감도 확인. 이번에 얻은 문턱 <strong>paired 잡음 SD 0.00211</strong>을 fold 간 분산과 비교</div></li>
     <li><span class="tag t-todo">TODO</span><div>GBM 도입 — LightGBM/CatBoost 그룹별 모델과 pooled 모델 (블루프린트 M2~M3)</div></li>
     <li><span class="tag t-todo">TODO</span><div>metric-aware calibration — FICR 6%/8% 구간 bias 보정 (M6)</div></li>
     <li><span class="tag t-todo">TODO</span><div>잔여 물리 피처 — hub-height 보정, air density, wind power density, LDAPS↔GFS source spread</div></li>
@@ -88,6 +89,11 @@
 
   <h2>작업 로그</h2>
   <div class="cards">
+    <a class="card" href="log/2026-07-27-baram-local-public-calibration.html">
+      <div class="date">2026-07-27 (KST) · 노트북 12 · 설계서 06 v1.1</div>
+      <div class="title">local↔Public 캘리브레이션 — 기울기는 잡음과 구분되지 않았다</div>
+      <div class="summary">첫 제출 2건의 Public 점수를 ledger와 run registry에 반입하고 기울기를 추정했다. 결론이 질문의 전제를 바꿨다 — 대회 안내문의 <code>Public Score = 사전 샘플링된 40%</code> 한 줄이 분석 방법을 결정했고, 2024 holdout에서 40%를 비복원 추출해 4,000회 채점한 결과 <strong>paired Δ의 표준편차가 0.00211</strong>이었다. 실측 ΔPublic(+0.018071)은 Δlocal(+0.014743)보다 크지만 그 차이는 <strong>1.58 SD</strong>에 불과하고, 기울기 95% 구간 <strong>[0.716, 1.279]</strong>가 1.0을 포함한다. 즉 <strong>기울기 1.226이 1과 다르다고 말할 근거가 없다</strong>(점 두 개는 자유도 0이라 오차를 데이터 밖에서 가져와야 한다). 대신 설명이 필요한 것은 <strong>수준 이동</strong>이었고, 지표별로 쪼개니 1-NMAE는 +0.0003으로 사실상 0인 반면 FICR만 +0.0274였다. 원인 판별 결과 <strong>FICR 계단 함수</strong>가 주 원인이고, 학습 구간 차이는 흔적이 없으며 2025 결측 133컬럼은 방향이 반대(Public이 오히려 높다)였다. 행 단위로도 확인 — 평가 14,531행 중 21.0%가 단가 구간을 이동했으나 순증은 그중 11.6%뿐이라 FICR이 개선과 잡음을 함께 증폭한다. Decision Box ⑯~⑱으로 기울기 구간 사용, 최종 채점 파일 수동 선택(자동 선택은 Public 40% 최고점을 고르는데 1차 평가는 Private 100%), "간격 &gt; 잡음"일 때만 순위 확정을 못 박았다. 그림 5종·237 tests·노트북 무결성 13개 통과.</div>
+    </a>
     <a class="card" href="log/2026-07-27-baram-preprocessing-guardrails.html">
       <div class="date">2026-07-27 (KST) · 설계서 06 v1.0</div>
       <div class="title">전처리 가드레일 문서화</div>
