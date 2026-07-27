@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BARAM 전처리 가드레일 문서화 작업 로그</title>
+<style>
+  :root { --bg:#0f1115; --card:#1a1d24; --border:#2a2f3a; --text:#e6e9ef; --muted:#8b93a7; --done:#3fb950; --warn:#d29922; --accent:#58a6ff; --bad:#f85149; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--text); line-height:1.65; }
+  .wrap { max-width:960px; margin:0 auto; padding:36px 20px 64px; }
+  a { color:var(--accent); }
+  h1 { margin:0 0 6px; font-size:1.7rem; }
+  h2 { color:var(--accent); font-size:1.08rem; margin-top:30px; }
+  .sub { color:var(--muted); margin-bottom:24px; }
+  .panel { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px 22px; }
+  .decision { border-left:4px solid var(--done); background:rgba(63,185,80,.08); padding:12px 16px; border-radius:6px; margin:12px 0; }
+  .warn { border-left:4px solid var(--warn); background:rgba(210,153,34,.08); padding:12px 16px; border-radius:6px; margin:12px 0; }
+  .scroll { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; margin:10px 0 18px; font-size:.9rem; }
+  th,td { border:1px solid var(--border); padding:8px 10px; text-align:left; }
+  th { background:#11151c; color:#c9d1d9; }
+  li { margin:6px 0; }
+  code { background:#0b0d11; padding:1px 6px; border-radius:4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>전처리 가드레일 문서화</h1>
+  <div class="sub">2026-07-27 KST · 설계서 06 v1.0 · 브랜치 <code>docs/mygithub05253-preprocessing-guardrails</code></div>
+
+  <div class="panel">
+    <h2>왜 만들었나</h2>
+    <p>승격 작업(설계서 05)에서 전처리 판단 근거가 노트북 09·10·11의 Decision Box 15개에 흩어져 있었다.
+    실무자나 심사자에게 "이 전처리는 왜 괜찮은가"를 설명하려면 노트북 세 개를 따라 읽어야 하는 상태였다.
+    판단 기준을 한 문서로 모으고, 각 항목을 <strong>실제 코드 위치</strong>와 <strong>인용 근거</strong>에 연결했다.</p>
+
+    <div class="warn">
+      <p><strong>전제.</strong> 모델링 실수는 시끄럽지만 전처리 누수는 조용하다. 코드는 정상 종료하고
+      검증 점수는 오히려 올라간다. 그래서 판단 기준이 사람의 주의력이 아니라 문서와 코드에 있어야 한다.</p>
+    </div>
+
+    <h2>문서 구성</h2>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>절</th><th>내용</th></tr></thead>
+      <tbody>
+        <tr><td>2. 절대 금지</td><td>예보 가용 시각 이후 정보, test/holdout 통계로 fit, 라벨 파생 피처, pseudo-labeling, 규정 위반</td></tr>
+        <tr><td>3. 조건부 허용</td><td>대치·스케일링·보간·차원축소·피처선택 — 금지가 아니라 <strong>fit 범위를 train으로 가두면 허용</strong></td></tr>
+        <tr><td>4. 코드 대응표</td><td>위험 9종을 방어하는 실제 코드 위치 (cutoff 검증, imputer/pooler fit 범위, geometry drift, 컬럼 대칭, clip 방향 등)</td></tr>
+        <tr><td>5. 과적합</td><td>holdout 재사용 위험도 평가, 단일 fold의 한계, 이번 제출에서 local↔Public이 어긋날 구조적 이유 3가지</td></tr>
+        <tr><td>6. 용어 규범</td><td>validation/test, forecast/data_available, NMAE 분모, FICR 계단 함수, 표기 정밀도</td></tr>
+        <tr><td>7. 체크리스트</td><td>누수·대칭·기록·해석 4묶음 자가 점검</td></tr>
+        <tr><td>8. 근거 문헌</td><td>6건 (아래)</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2>핵심 정리 — 판별 질문 하나</h2>
+    <div class="decision">
+      <p style="margin:0"><strong>이 값을 계산할 때, 예측 시점에는 알 수 없었을 정보가 한 방울이라도 들어갔는가?</strong><br>
+      들어갔다면 금지, 안 들어갔다면 허용. 나머지는 이 질문을 상황별로 풀어 쓴 것이다.</p>
+    </div>
+
+    <h2>문서에 못 박은 사실 3가지</h2>
+    <ul>
+      <li><strong>2025년 제출용 피처의 24%는 관측이 아니다.</strong> 550개 컬럼 중 133개가 결측이고
+      train median으로 채워진다. 공간 pooling으로 "복원"하지 않고 NaN을 보존한 뒤 채우는 것이 계약이며,
+      이 사실을 숨기지 않는 것이 가드레일의 일부다.</li>
+      <li><strong>clip은 예측에만 적용한다.</strong> 실제값을 조정하면 전처리가 아니라 채점표 수정이다.
+      노트북 11은 holdout 실제값의 SHA-256을 실험 전후로 비교해 불변임을 출력으로 남긴다.</li>
+      <li><strong>정규화는 쓰지 않는다.</strong> RandomForest는 스케일 불변이다. 안 쓰는 기법을
+      썼다고 적지 않는 것이 용어 절의 핵심이다.</li>
+    </ul>
+
+    <h2>과적합 현재 위험도</h2>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>항목</th><th>값</th><th>판단</th></tr></thead>
+      <tbody>
+        <tr><td>비교한 후보 수</td><td>8개 남짓</td><td>낮음</td></tr>
+        <tr><td>채택 후보 개선분</td><td>+0.015548</td><td>노이즈 수준을 크게 넘음</td></tr>
+        <tr><td>후보 간 최소 간격</td><td>약 0.00056</td><td>이 차이로는 순위를 확정하지 않는 편이 안전</td></tr>
+        <tr><td>향후</td><td>GBM·fold·calibration으로 후보 수십 개</td><td>위험 증가 예정</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2>근거 문헌</h2>
+    <ul>
+      <li>Moscovich &amp; Rosset (2022), JRSS-B 84(4) — 비지도 전처리도 resampling 밖에서 fit하면 CV 편향</li>
+      <li>Lones, arXiv:2108.02497 — 피처 선택 시점, 시계열 look-ahead 등 함정 목록</li>
+      <li>Journal of Big Data (2025), DOI 10.1186/s40537-025-01193-8 — 누수 유형 분류</li>
+      <li>Dwork et al. (2015), Science 349(6248) — holdout 반복 사용의 낙관 편향</li>
+      <li>Blum &amp; Hardt (2015), ICML — 리더보드 과적합 (The Ladder)</li>
+      <li>Bergmeir &amp; Benítez (2012), Information Sciences 191 — 시계열 CV는 blocked/rolling</li>
+    </ul>
+    <p class="sub">방법론 근거로만 인용하고 대회 데이터에 관한 사실 주장으로 승격시키지 않는다는
+    기존 원칙(<code>docs/README.md</code>)을 문서에 명시했다.</p>
+
+    <h2>다음 단계</h2>
+    <div class="decision">
+      <p style="margin:0">제출 후 Public 점수가 들어오면 5.3절(local↔Public 괴리 이유)에 실측을 채운다.
+      seasonal/time fold(F1~F4) 도입 시 5.2절을 갱신하고, 새 전처리를 추가할 때마다 3절 표와
+      4절 코드 대응표에 행을 더한다.</p>
+    </div>
+  </div>
+</div>
+</body>
+</html>
