@@ -81,7 +81,8 @@
     <li><span class="tag t-done">DONE</span><div>첫 리더보드 제출 — S1(official_mean) Public 0.588303, S2(spatial_idw2_all_group) Public 0.606374, ledger·registry 반입 완료</div></li>
     <li><span class="tag t-done">DONE</span><div>local↔Public 캘리브레이션 — 기울기 1.226이 <strong>Public 40% 표본 잡음과 구분되지 않음</strong>(95% 구간 [0.72, 1.28]), 수준 이동의 주 원인은 FICR 계단으로 판별 (노트북 12, 설계서 06 v1.1)</div></li>
     <li><span class="tag t-done">DONE</span><div>시간 강건성 검증 — F0~F4 재계산·실행. <strong>순위가 5개 fold 전부 동일</strong>, 개선분은 fold 간 SD 0.00361로 흔들림. 순위 확정 문턱을 0.00211 → <strong>0.0036</strong>으로 상향 (노트북 13, 설계서 06 v1.2)</div></li>
-    <li><span class="tag t-progress">NEXT</span><div>GBM 도입 — LightGBM/CatBoost 그룹별 모델과 pooled 모델 (블루프린트 M2~M3). 문턱 0.0036과 Decision Box ㉑ 판정 규칙으로 후보를 거른다</div></li>
+    <li><span class="tag t-done">DONE</span><div>cross-year 검증 — F5~F8 추가로 <strong>검증 연도를 1개에서 3개로</strong> 확장. 채택 후보의 통제군 대비 개선분은 <strong>9/9 fold 양수</strong>로 살아남았으나, <strong>1·2위 부호 일치는 5/5 → 8/9로 무너져 순위 미확정</strong>으로 되돌림. fold runner를 <code>src/baram/folds.py</code>로 승격 (노트북 14, 설계서 06 v1.3)</div></li>
+    <li><span class="tag t-progress">NEXT</span><div>GBM 도입 — LightGBM/CatBoost 그룹별 모델과 pooled 모델 (블루프린트 M2~M3). <strong>F0~F8 아홉 fold</strong>에서 채점하고 문턱 0.0036과 Decision Box ㉓ 판정 규칙으로 후보를 거른다</div></li>
     <li><span class="tag t-todo">TODO</span><div>metric-aware calibration — FICR 6%/8% 구간 bias 보정 (M6)</div></li>
     <li><span class="tag t-todo">TODO</span><div>잔여 물리 피처 — hub-height 보정, air density, wind power density, LDAPS↔GFS source spread</div></li>
     <li><span class="tag t-todo">TODO</span><div>발표·Short Research Paper 산출물 구성</div></li>
@@ -89,6 +90,11 @@
 
   <h2>작업 로그</h2>
   <div class="cards">
+    <a class="card" href="log/2026-07-27-baram-cross-year-fold.html">
+      <div class="date">2026-07-27 (KST) · 노트북 14 · <code>src/baram/folds.py</code> 승격 · 설계서 04·06 v1.3</div>
+      <div class="title">cross-year fold — 다른 해에서는 1·2위가 갈리지 않는다</div>
+      <div class="summary">노트북 13이 미해결로 남긴 "검증 구간이 전부 2024"를 조사했고, <strong>답할 수 있었으며 답해보니 결론 하나가 뒤집혔다.</strong> 기존 판정("Group 3 라벨이 2023부터라 2023 검증 fold를 만들 수 없다")은 <strong>검증 구간을 2023년 달력 전체로 둘 때만 참</strong>이었다 — 2023년 안에서 자르면 Group 3에도 학습 라벨이 생긴다. 우회로 하나는 확실히 닫았다: <code>scada_unison_train.csv</code>가 <strong>2023-01-01에 시작</strong>해(2022년 0행) 프록시 라벨 복원이 불가능하며, 반면 NWP는 전 연도 NaN 0건·cutoff 위반 0건이라 2022 학습 창에 품질 페널티가 없다. F5(2023 H2·3그룹, <strong>F4의 연도 미러</strong> — 계절·검증 행 수 4,416 동일)와 F6·F7·F8을 추가해 <strong>검증 연도를 1개에서 3개(2022·2023·2024)로</strong> 넓혔다. 역방향 fold는 행 간 연산 0건·라벨 파생 피처 0개라 자기회귀 누수 통로가 없음을 근거로 <strong>순위 탐침 전용</strong>으로 허용했다(Decision Box ㉒). 결과가 두 갈래다 — <strong>채택 후보 vs 통제군은 9/9 fold 양수</strong>(최소 0.010477, 문턱의 2.9배)이고 fold 내부 bootstrap P(Δ&gt;0)=1.000이 전 fold다. 그러나 <strong>1·2위 부호 일치는 5/5 → 8/9로 떨어졌고</strong>(F6에서 −0.000171) 2023·2022의 bootstrap 확률이 0.429~0.811로 동전 던지기다. 즉 <strong>"부호 5/5 일치"는 다섯 fold가 같은 해를 검증한 산물</strong>이었다. Decision Box ㉓으로 1·2위를 미확정으로 되돌리고 부호 일치에 <strong>검증 연도 둘 이상</strong> 조건을 걸었다(제출물은 변경 없음). 문턱은 SD가 0.0035~0.0038에 머물러 0.0036 유지. 연도 성분 0.00330(Group 1·2만 0.00397)은 학습 창 0.00413과 같은 급. fold runner를 <code>src/baram/folds.py</code>로 승격하고 계약 검사를 코드로 강제했다. F0 재현 절대 차이 0.0 · 그림 4종 · 256 tests · 노트북 무결성 15개 통과.</div>
+    </a>
     <a class="card" href="log/2026-07-27-baram-seasonal-time-fold.html">
       <div class="date">2026-07-27 (KST) · 노트북 13 · 설계서 02·04·06 갱신</div>
       <div class="title">seasonal·time fold — 순위는 안정, 크기는 불안정</div>

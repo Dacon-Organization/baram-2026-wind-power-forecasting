@@ -10,7 +10,7 @@
 | [03-operations-master-plan.md](03-operations-master-plan.md) | 공식 데이터 공개 전 리더보드 제출, 실험 추적, 산출물 검증, 발표 평가 준비 |
 | [04-final-solution-blueprint.md](04-final-solution-blueprint.md) | 공식 데이터·평가 코드·baseline 공개 후 최종 데이터 분석, 모델링, 발표 산출물 설계 |
 | [05-feature-set-promotion.md](05-feature-set-promotion.md) | 노트북 랩에서 검증된 피처 3종의 production 승격, 피처셋 config 레이어, 첫 리더보드 제출 설계 · v1.1 구현 완료(G1~G5 통과) · 제출 대기 |
-| [06-preprocessing-guardrails.md](06-preprocessing-guardrails.md) | 전처리 허용 범위와 금지 항목, fit 경계 규칙, 과적합 위험 평가, 용어 사용 규범, 자가 점검 체크리스트 |
+| [06-preprocessing-guardrails.md](06-preprocessing-guardrails.md) | 전처리 허용 범위와 금지 항목, fit 경계 규칙, 과적합 위험 평가, 용어 사용 규범, 자가 점검 체크리스트 · v1.3 검증 fold F0~F8(검증 연도 3개) 반영 |
 
 ## 작성 전제
 
