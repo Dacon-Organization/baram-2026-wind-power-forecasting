@@ -20,13 +20,24 @@ import pandas as pd
 from baram.baseline import calendar_features
 from baram.feature_config import FeatureSetConfig
 from baram.features.turbine_spatial import fit_turbine_spatial_pooler
-from baram.features.weather_grid import build_weather_feature_pair
+from baram.features.weather_grid import build_weather_feature_pair, build_weather_features
 from baram.features.wind_vector import derive_wind_vector_features
 from baram.metrics import TARGET_COLS
 
 
 WEATHER_SOURCES = ("ldaps", "gfs")
 _TARGET_GROUP_PREFIX = "kpx_"
+
+
+@dataclass(frozen=True)
+class TrainFeatureBuild:
+  """train CLI가 test 파일 없이 만들 수 있는 학습용 조립 결과."""
+
+  config: FeatureSetConfig
+  matrix: pd.DataFrame
+  feature_columns: tuple
+  target_feature_columns: dict
+  spatial_poolers: dict = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -151,6 +162,90 @@ def _target_columns(config, feature_columns, spatial_columns):
   return selected
 
 
+def _require_turbine_locations(config, turbine_locations):
+  if config.uses_spatial and turbine_locations is None:
+    raise ValueError(
+      f"{config.name}은 공간 pooling을 사용하므로 터빈 좌표가 필요합니다. "
+      "info.xlsx 경로를 지정하세요"
+    )
+
+
+def build_train_features(config, *, time_index, ldaps, gfs, turbine_locations=None):
+  """train CLI 경로. test 파일 없이 학습용 matrix와 fit된 pooler를 만든다.
+
+  train/test raw schema 대조는 여기서 하지 않는다. inference가 bundle의
+  feature_columns와 대조하므로 drift는 그 시점에 실패로 드러난다.
+  """
+  if not isinstance(config, FeatureSetConfig):
+    raise TypeError("config는 FeatureSetConfig여야 합니다")
+  _require_turbine_locations(config, turbine_locations)
+
+  vector_frames = _derive_vector_frames(config, {"ldaps_train": ldaps, "gfs_train": gfs})
+  weather = build_weather_features(
+    vector_frames["ldaps_train"],
+    vector_frames["gfs_train"],
+    statistics=config.statistics,
+    include_lead=config.include_lead,
+  )
+
+  poolers = {}
+  spatial_features = None
+  spatial_columns = ()
+  if config.uses_spatial:
+    parts = []
+    for source in WEATHER_SOURCES:
+      pooler = fit_turbine_spatial_pooler(
+        vector_frames[f"{source}_train"],
+        turbine_locations,
+        source=source,
+        pooling_methods=config.spatial.methods,
+        idw_power=config.spatial.idw_power,
+      )
+      poolers[source] = pooler
+      parts.append(pooler.transform(vector_frames[f"{source}_train"]))
+    spatial_features = _merge_on_forecast(*parts)
+    spatial_columns = tuple(
+      column for column in spatial_features.columns if column != "forecast_kst_dtm"
+    )
+
+  matrix = _assemble_matrix(config, time_index, weather, spatial_features, "train")
+  feature_columns = tuple(matrix.columns)
+  return TrainFeatureBuild(
+    config=config,
+    matrix=matrix,
+    feature_columns=feature_columns,
+    target_feature_columns=_target_columns(config, feature_columns, spatial_columns),
+    spatial_poolers=poolers,
+  )
+
+
+def build_test_features(config, *, time_index, ldaps, gfs, spatial_poolers=None):
+  """inference CLI 경로. train에서 fit한 pooler를 그대로 transform에만 쓴다."""
+  if not isinstance(config, FeatureSetConfig):
+    raise TypeError("config는 FeatureSetConfig여야 합니다")
+  poolers = spatial_poolers or {}
+  if config.uses_spatial and sorted(poolers) != sorted(WEATHER_SOURCES):
+    raise ValueError(
+      f"{config.name}은 공간 pooling을 사용하므로 train에서 fit한 pooler가 필요합니다: "
+      f"받은 source={sorted(poolers)}"
+    )
+
+  vector_frames = _derive_vector_frames(config, {"ldaps_test": ldaps, "gfs_test": gfs})
+  weather = build_weather_features(
+    vector_frames["ldaps_test"],
+    vector_frames["gfs_test"],
+    statistics=config.statistics,
+    include_lead=config.include_lead,
+  )
+
+  spatial_features = None
+  if config.uses_spatial:
+    spatial_features = _merge_on_forecast(
+      *[poolers[source].transform(vector_frames[f"{source}_test"]) for source in WEATHER_SOURCES]
+    )
+  return _assemble_matrix(config, time_index, weather, spatial_features, "test")
+
+
 def build_feature_pipeline(
   config,
   *,
@@ -165,11 +260,7 @@ def build_feature_pipeline(
   """피처셋 config로 train/test feature matrix를 대칭으로 만든다."""
   if not isinstance(config, FeatureSetConfig):
     raise TypeError("config는 FeatureSetConfig여야 합니다")
-  if config.uses_spatial and turbine_locations is None:
-    raise ValueError(
-      f"{config.name}은 공간 pooling을 사용하므로 터빈 좌표가 필요합니다. "
-      "info.xlsx 경로를 지정하세요"
-    )
+  _require_turbine_locations(config, turbine_locations)
 
   frames = {
     "ldaps_train": train_ldaps,
@@ -237,7 +328,10 @@ def build_feature_pipeline(
 
 __all__ = [
   "FeaturePipeline",
+  "TrainFeatureBuild",
   "WEATHER_SOURCES",
   "build_feature_pipeline",
+  "build_test_features",
+  "build_train_features",
   "target_group_id",
 ]

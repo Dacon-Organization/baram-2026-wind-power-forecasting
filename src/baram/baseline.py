@@ -43,12 +43,15 @@ class RandomForestBaselineBundle:
   feature_columns: list
   train_rows: dict
   target_feature_columns: dict = None
+  spatial_poolers: dict = None
 
   def __post_init__(self):
     if self.target_feature_columns is None:
       self.target_feature_columns = {
         target: list(self.feature_columns) for target in self.models
       }
+    if self.spatial_poolers is None:
+      self.spatial_poolers = {}
 
 
 def _require_columns(frame, required_columns, frame_name):
@@ -183,6 +186,7 @@ def train_random_forest_baseline(
   train_frame,
   model_params=None,
   target_feature_columns=None,
+  spatial_poolers=None,
 ):
   """target별 non-null mask로 RandomForest baseline을 학습한다.
 
@@ -226,6 +230,7 @@ def train_random_forest_baseline(
     feature_columns=feature_columns,
     train_rows=train_rows,
     target_feature_columns=resolved_columns,
+    spatial_poolers=dict(spatial_poolers or {}),
   )
 
 

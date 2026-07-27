@@ -11,10 +11,11 @@ if __package__ in {None, ""}:
 
 import pandas as pd
 
-from baram.baseline import build_inference_features
 from baram.baseline import build_submission
 from baram.baseline import predict_random_forest_baseline
+from baram.feature_pipeline import build_test_features
 from baram.registry import default_metadata_path
+from baram.registry import feature_set_from_metadata
 from baram.registry import load_registered_model_artifact
 from baram.registry import update_run_registry_submission
 from baram.validation import build_validated_submission_artifact
@@ -43,6 +44,11 @@ def build_parser():
   parser.add_argument("--ldaps-test", type=Path, help="평가 LDAPS CSV 경로")
   parser.add_argument("--gfs-test", type=Path, help="평가 GFS CSV 경로")
   parser.add_argument("--submission-output", type=Path, help="검증 통과 후 저장할 제출 CSV 경로")
+  parser.add_argument(
+    "--info-xlsx",
+    type=Path,
+    help="공식 info.xlsx 경로. 공간 pooler는 model bundle에서 복원하므로 보통 필요하지 않습니다",
+  )
   parser.add_argument(
     "--encoding",
     choices=["utf-8", "utf-8-sig"],
@@ -88,11 +94,23 @@ def run_inference(args):
   ldaps_test = pd.read_csv(args.ldaps_test, encoding="utf-8-sig")
   gfs_test = pd.read_csv(args.gfs_test, encoding="utf-8-sig")
 
-  inference_features = build_inference_features(sample_submission, ldaps_test, gfs_test)
+  # 피처셋은 수동 인자가 아니라 metadata에서 복원한다. train/inference 불일치는
+  # 조용히 지나가면 안 되는 사고이므로 컬럼 대조에서 즉시 실패시킨다.
+  feature_set = feature_set_from_metadata(metadata)
+  inference_matrix = build_test_features(
+    feature_set,
+    time_index=sample_submission["forecast_kst_dtm"],
+    ldaps=ldaps_test,
+    gfs=gfs_test,
+    spatial_poolers=getattr(bundle, "spatial_poolers", None),
+  )
   expected_feature_columns = list(metadata["model"]["feature_columns"])
-  if list(inference_features.X.columns) != expected_feature_columns:
-    raise ValueError("inference feature 순서가 model metadata와 일치하지 않습니다")
-  predictions = predict_random_forest_baseline(bundle, inference_features.X)
+  if list(inference_matrix.columns) != expected_feature_columns:
+    raise ValueError(
+      f"inference feature 순서가 model metadata와 일치하지 않습니다 "
+      f"(피처셋={feature_set.name})"
+    )
+  predictions = predict_random_forest_baseline(bundle, inference_matrix)
   submission = build_submission(sample_submission, predictions)
   artifact = build_validated_submission_artifact(
     submission,

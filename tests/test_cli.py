@@ -41,10 +41,14 @@ def makeValidSubmission():
   return submission
 
 
-def makeWeatherFrame(times, values):
+OFFICIAL_GRID_COUNTS = {"ldaps": 16, "gfs": 9}
+
+
+def makeWeatherFrame(times, values, source="ldaps"):
+  """공식 grid 수 계약(LDAPS 16 / GFS 9)을 만족하는 합성 NWP frame."""
   rows = []
   for timeIndex, forecastTime in enumerate(pd.to_datetime(times)):
-    for gridId in [1, 2]:
+    for gridId in range(1, OFFICIAL_GRID_COUNTS[source] + 1):
       value = float(values[timeIndex] + gridId)
       rows.append(
         {
@@ -78,7 +82,7 @@ def createRegisteredModelFiles(tmp_path):
   registryPath = tmp_path / "run_registry.csv"
   labels.to_csv(labelsPath, index=False, encoding="utf-8-sig")
   makeWeatherFrame(times, [1, 2, 3, 4, 5]).to_csv(ldapsPath, index=False, encoding="utf-8-sig")
-  makeWeatherFrame(times, [10, 20, 30, 40, 50]).to_csv(gfsPath, index=False, encoding="utf-8-sig")
+  makeWeatherFrame(times, [10, 20, 30, 40, 50], source="gfs").to_csv(gfsPath, index=False, encoding="utf-8-sig")
   manifestPath.write_text("synthetic manifest", encoding="utf-8")
 
   status = trainMain(
@@ -158,7 +162,7 @@ def testInferenceRunLoadsRegisteredSidecarAndUpdatesValidatedSubmissionHash(tmp_
   sample.to_csv(samplePath, index=False, encoding="utf-8-sig")
   values = range(EXPECTED_SUBMISSION_ROWS)
   makeWeatherFrame(forecastTimes, values).to_csv(ldapsTestPath, index=False, encoding="utf-8-sig")
-  makeWeatherFrame(forecastTimes, values).to_csv(gfsTestPath, index=False, encoding="utf-8-sig")
+  makeWeatherFrame(forecastTimes, values, source="gfs").to_csv(gfsTestPath, index=False, encoding="utf-8-sig")
 
   status = inferenceMain(
     [

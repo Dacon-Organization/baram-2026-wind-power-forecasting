@@ -219,6 +219,28 @@ def feature_set_sha256(config):
   return hashlib.sha256(feature_set_canonical_json(config).encode("utf-8")).hexdigest()
 
 
+def feature_set_from_dict(payload):
+  """`feature_set_to_dict`의 역변환. metadata sidecar에서 config를 복원한다."""
+  if not isinstance(payload, dict):
+    raise TypeError("피처셋 payload는 매핑이어야 합니다")
+  spatial_payload = payload.get("spatial")
+  spatial = None
+  if spatial_payload is not None:
+    spatial = SpatialPoolingConfig(
+      methods=tuple(spatial_payload["methods"]),
+      idw_power=float(spatial_payload["idw_power"]),
+      scope=spatial_payload["scope"],
+    )
+  return FeatureSetConfig(
+    name=payload["name"],
+    statistics=tuple(payload["statistics"]),
+    include_lead=bool(payload["include_lead"]),
+    wind_vector=bool(payload["wind_vector"]),
+    spatial=spatial,
+    calendar=bool(payload["calendar"]),
+  )
+
+
 def _require_known_keys(mapping, allowed, label):
   unknown = sorted(set(mapping) - set(allowed))
   if unknown:
@@ -313,6 +335,7 @@ __all__ = [
   "SPATIAL_SCOPES",
   "SpatialPoolingConfig",
   "feature_set_canonical_json",
+  "feature_set_from_dict",
   "feature_set_sha256",
   "feature_set_to_dict",
   "get_feature_set",

@@ -19,7 +19,9 @@ import sklearn
 from baram.feature_config import (
   DEFAULT_FEATURE_SET,
   FeatureSetConfig,
+  feature_set_from_dict,
   feature_set_sha256,
+  feature_set_to_dict,
   get_feature_set,
 )
 from baram.features.wind_vector import DEFAULT_WIND_VECTOR_SPECS
@@ -176,10 +178,12 @@ def build_preprocessing_contract(feature_set=None):
 def build_feature_set_record(resolved=None, pipeline=None):
   """metadata sidecar에 남길 피처셋 블록을 만든다."""
   if resolved is None:
+    legacy = get_feature_set(DEFAULT_FEATURE_SET)
     return {
       "name": DEFAULT_FEATURE_SET,
       "source": "legacy",
-      "resolved_sha256": feature_set_sha256(get_feature_set(DEFAULT_FEATURE_SET)),
+      "resolved_sha256": feature_set_sha256(legacy),
+      "config": feature_set_to_dict(legacy),
       "scope": None,
       "feature_count": None,
       "target_feature_counts": {},
@@ -190,6 +194,7 @@ def build_feature_set_record(resolved=None, pipeline=None):
     "name": config.name,
     "source": resolved.source,
     "resolved_sha256": resolved.sha256,
+    "config": feature_set_to_dict(config),
     "scope": None if config.spatial is None else config.spatial.scope,
     "feature_count": None if pipeline is None else len(pipeline.feature_columns),
     "target_feature_counts": (
@@ -201,6 +206,20 @@ def build_feature_set_record(resolved=None, pipeline=None):
       }
     ),
   }
+
+
+def feature_set_from_metadata(metadata):
+  """model metadata sidecar에서 학습에 쓴 피처셋 config를 복원한다.
+
+  schema 1.0 sidecar에는 feature_set 블록이 없으므로 legacy(official_mean)로 본다.
+  """
+  record = (metadata or {}).get("feature_set")
+  if not record:
+    return get_feature_set(DEFAULT_FEATURE_SET)
+  payload = record.get("config")
+  if not payload:
+    return get_feature_set(record.get("name", DEFAULT_FEATURE_SET))
+  return feature_set_from_dict(payload)
 
 
 RUN_REGISTRY_COLUMNS = [
@@ -907,6 +926,7 @@ __all__ = [
   "PREPROCESSING_CONTRACT",
   "build_feature_set_record",
   "build_preprocessing_contract",
+  "feature_set_from_metadata",
   "RUN_REGISTRY_COLUMNS",
   "SavedModelArtifact",
   "append_run_registry_entry",

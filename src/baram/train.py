@@ -13,8 +13,11 @@ if __package__ in {None, ""}:
 
 import pandas as pd
 
-from baram.baseline import build_training_features
+from baram.baseline import BaselineFeatureSet
 from baram.baseline import train_random_forest_baseline
+from baram.feature_config import DEFAULT_FEATURE_SET, FEATURE_SETS, resolve_feature_set
+from baram.feature_pipeline import build_train_features
+from baram.features.turbine_metadata import load_turbine_locations
 from baram.registry import (
   append_run_registry_entry,
   build_model_artifact,
@@ -39,6 +42,21 @@ def build_parser():
   parser.add_argument("--data-manifest", type=Path, help="공식 데이터 MANIFEST.md 경로")
   parser.add_argument("--git-commit", help="코드 버전 commit SHA. 생략 시 현재 Git HEAD를 사용합니다.")
   parser.add_argument("--experiment-id", default="baseline_rf", help="run registry 실험 식별자")
+  parser.add_argument(
+    "--feature-set",
+    choices=sorted(FEATURE_SETS),
+    help=f"사용할 피처셋 프리셋 이름 (기본값 {DEFAULT_FEATURE_SET})",
+  )
+  parser.add_argument(
+    "--feature-set-config",
+    type=Path,
+    help="프리셋을 상속해 일부만 덮어쓰는 YAML 경로. --feature-set과 동시 지정 불가",
+  )
+  parser.add_argument(
+    "--info-xlsx",
+    type=Path,
+    help="공식 info.xlsx 경로. 공간 pooling을 쓰는 피처셋이면 필수입니다",
+  )
   parser.add_argument("--created-at-kst", help="재현용 KST 실행 시각. 기본값은 현재 시각입니다.")
   parser.add_argument("--seed", type=int, default=42, help="RandomForest random_state")
   parser.add_argument("--n-estimators", type=int, default=120, help="RandomForest tree 개수")
@@ -114,12 +132,42 @@ def _build_validation_record(args):
   return record or None
 
 
+def resolve_training_feature_set(args):
+  """CLI 인자에서 피처셋을 확정하고, 공간 프리셋이면 터빈 좌표를 함께 읽는다."""
+  resolved = resolve_feature_set(
+    name=getattr(args, "feature_set", None),
+    config_path=getattr(args, "feature_set_config", None),
+  )
+  turbine_locations = None
+  if resolved.config.uses_spatial:
+    info_path = getattr(args, "info_xlsx", None)
+    if info_path is None:
+      raise ValueError(
+        f"{resolved.config.name}은 공간 pooling을 사용하므로 --info-xlsx가 필요합니다"
+      )
+    turbine_locations = load_turbine_locations(info_path)
+  return resolved, turbine_locations
+
+
 def run_train(args):
   metadata_output = _validate_output_paths(args)
+  resolved_feature_set, turbine_locations = resolve_training_feature_set(args)
   train_labels = pd.read_csv(args.train_labels, encoding="utf-8-sig")
   ldaps_train = pd.read_csv(args.ldaps_train, encoding="utf-8-sig")
   gfs_train = pd.read_csv(args.gfs_train, encoding="utf-8-sig")
-  train_features = build_training_features(train_labels, ldaps_train, gfs_train)
+
+  build = build_train_features(
+    resolved_feature_set.config,
+    time_index=train_labels["kst_dtm"],
+    ldaps=ldaps_train,
+    gfs=gfs_train,
+    turbine_locations=turbine_locations,
+  )
+  train_features = BaselineFeatureSet(
+    frame=train_labels.reset_index(drop=True),
+    X=build.matrix,
+    weather=pd.DataFrame(),
+  )
   config = BaselineRunConfig(
     experiment_id=args.experiment_id,
     seed=args.seed,
@@ -132,12 +180,15 @@ def run_train(args):
     train_features.X,
     train_features.frame,
     model_params=config.effective_model_params(),
+    target_feature_columns=build.target_feature_columns,
+    spatial_poolers=build.spatial_poolers,
   )
   data_profile = build_training_data_profile(
     train_labels=train_labels,
     ldaps_train=ldaps_train,
     gfs_train=gfs_train,
     train_features=train_features,
+    feature_set=resolved_feature_set.config,
   )
   input_files = fingerprint_files(
     {
@@ -156,6 +207,8 @@ def run_train(args):
     input_files=input_files,
     created_at_kst=args.created_at_kst,
     validation=_build_validation_record(args),
+    feature_set=resolved_feature_set,
+    feature_pipeline=build,
   )
   saved = save_model_artifact(
     artifact,
