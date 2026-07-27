@@ -46,8 +46,8 @@
   </div>
 
   <h2>전체 진척률</h2>
-  <div class="bar"><i style="width:99%"></i></div>
-  <div class="barlabel">공식 데이터 공개 후 metric/baseline 재현, train/inference 분리, submission ledger·validator·model registry를 완료했다. Weather/Wind feature lab에 이어 공식 터빈 좌표 기반 spatial pooling을 검증했으며, 동일 2024 holdout total score는 공식 mean 0.576938에서 vector 0.586482, all-group IDW p=2 0.592485까지 개선됐다.</div>
+  <div class="bar"><i style="width:77%"></i></div>
+  <div class="barlabel">공식 데이터 공개 후 metric/baseline 재현, train/inference 분리, submission ledger·validator·model registry를 완료했다. Weather/Wind feature lab에 이어 공식 터빈 좌표 기반 spatial pooling을 검증했으며, 동일 2024 holdout total score는 공식 mean 0.576938에서 vector 0.586482, all-group IDW p=2 0.592485까지 개선됐다. 다만 이 개선분은 아직 production 파이프라인에 반영되지 않았고 리더보드 제출도 0회다. 2026-07-27 설계에서 남은 작업을 승격·제출, seasonal fold, GBM, calibration, 잔여 물리 피처, 발표 산출물로 구체화하며 분모를 재산정했다. 마감 2026-08-14 10:00 KST.</div>
 
 
   <h2>마일스톤 파이프라인</h2>
@@ -75,11 +75,28 @@
     <li><span class="tag t-done">DONE</span><div>Weather feature lab — mean baseline과 mean+std/min/max+lead 전처리 비교</div></li>
     <li><span class="tag t-done">DONE</span><div>Wind vector feature lab — LDAPS 10m·GFS 10/80/100m speed·wind-from 순환 피처 비교</div></li>
     <li><span class="tag t-done">DONE</span><div>Turbine-aware grid pooling lab — 공식 터빈 좌표 nearest/IDW와 all-group·own-group 범위 비교</div></li>
-    <li><span class="tag t-progress">NEXT</span><div>시간 강건성 검증 — seasonal/time fold와 GBM에서 IDW p=2·nearest 순위 민감도 확인</div></li>
+    <li><span class="tag t-done">DONE</span><div>피처셋 승격·첫 제출 설계 — 프리셋 4종, YAML 오버라이드, 재현성 계약 파생, 롤백 전략 확정</div></li>
+    <li><span class="tag t-done">DONE</span><div>피처셋 승격 구현 — CLI <code>--feature-set</code> 연결, 검증 노트북 09·10·11, G1~G5 전부 통과, 채택 후보 2024 holdout 0.592485 절대 차이 0.0으로 재현</div></li>
+    <li><span class="tag t-progress">NEXT</span><div>첫 리더보드 제출 — S1(official_mean)·S2(spatial_idw2_all_group) 제출 후보 준비 완료, <strong>사람이 제출 버튼을 누르고</strong> ledger의 Public 점수를 채워 local Δ +0.014742에 대응하는 기울기 추정</div></li>
+    <li><span class="tag t-todo">TODO</span><div>시간 강건성 검증 — seasonal/time fold(F1~F4)에서 프리셋 4종 민감도 확인</div></li>
+    <li><span class="tag t-todo">TODO</span><div>GBM 도입 — LightGBM/CatBoost 그룹별 모델과 pooled 모델 (블루프린트 M2~M3)</div></li>
+    <li><span class="tag t-todo">TODO</span><div>metric-aware calibration — FICR 6%/8% 구간 bias 보정 (M6)</div></li>
+    <li><span class="tag t-todo">TODO</span><div>잔여 물리 피처 — hub-height 보정, air density, wind power density, LDAPS↔GFS source spread</div></li>
+    <li><span class="tag t-todo">TODO</span><div>발표·Short Research Paper 산출물 구성</div></li>
   </ul>
 
   <h2>작업 로그</h2>
   <div class="cards">
+    <a class="card" href="log/2026-07-27-baram-feature-set-promotion-implementation.html">
+      <div class="date">2026-07-27 (KST) · 설계서 05 v1.1</div>
+      <div class="title">피처셋 승격 구현과 첫 제출 후보 준비</div>
+      <div class="summary">랩에만 있던 피처 3종을 production 파이프라인으로 승격하고 G1~G5를 모두 통과했다. 채택 후보 <code>spatial_idw2_all_group</code>의 2024 holdout total이 노트북 08의 <code>0.5924854297224146</code>과 <strong>절대 차이 0.0</strong>으로 재현됐다(G3). 구현 중 세 가지를 정정했다 — 재현 판정 기준을 6자리 표기가 아닌 전체 정밀도 값으로 명세(표기 오차 5e-7이 1e-9 게이트를 자동으로 넘긴다), 라벨 01:00 시작 규약이 만든 2025 경계 행 1건을 학습·holdout 양쪽에서 제외, S1↔S2 local Δ를 랩 통제군 기준 +0.015547이 아닌 <code>official_mean</code> 기준 <strong>+0.014742</strong>로 정정. 검증 노트북 10·11을 실행 출력이 남은 상태로 추가하고(Decision Box ⑥~⑮), S1·S2 제출 CSV를 production CLI로 만들어 validator 통과·registry 기록·ledger 초안까지 준비했다. 제출 버튼은 누르지 않았다.</div>
+    </a>
+    <a class="card" href="log/2026-07-27-baram-feature-set-promotion-design.html">
+      <div class="date">2026-07-27 (KST) · Codex → Claude 이관</div>
+      <div class="title">피처셋 승격과 첫 제출 파이프라인 설계</div>
+      <div class="summary">노트북 랩 3종의 개선분(0.576938→0.592485)이 production 경로에 전혀 반영되지 않았고 리더보드 제출도 0회임을 확인했다. 승격을 막던 <code>build_weather_features</code> 이름 충돌, 터빈 좌표 로더 부재, <code>PREPROCESSING_CONTRACT</code> 하드코딩, bundle의 단일 feature 목록 4가지를 진단하고 프리셋 4종·YAML 상속 오버라이드·superset 슬라이스·정규화 config hash로 설계했다. 기본값 <code>official_mean</code> 보존, golden 회귀, 9개 독립 커밋으로 3중 롤백 장치를 두고 G3 점수 재현 실패 시 제출 정지를 게이트로 고정했다.</div>
+    </a>
     <a class="card" href="log/2026-07-17-baram-turbine-spatial-pooling-lab.html">
       <div class="date">2026-07-17 (KST) · feature/mygithub05253-turbine-spatial-pooling</div>
       <div class="title">Turbine Spatial Pooling Feature Lab</div>

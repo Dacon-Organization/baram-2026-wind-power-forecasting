@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BARAM 피처셋 승격·첫 제출 설계 작업 로그</title>
+<style>
+  :root { --bg:#0f1115; --card:#1a1d24; --border:#2a2f3a; --text:#e6e9ef; --muted:#8b93a7; --done:#3fb950; --warn:#d29922; --accent:#58a6ff; --bad:#f85149; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--text); line-height:1.65; }
+  .wrap { max-width:960px; margin:0 auto; padding:36px 20px 64px; }
+  a { color:var(--accent); }
+  h1 { margin:0 0 6px; font-size:1.7rem; }
+  h2 { color:var(--accent); font-size:1.08rem; margin-top:30px; }
+  .sub { color:var(--muted); margin-bottom:24px; }
+  .panel { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px 22px; }
+  .decision { border-left:4px solid var(--done); background:rgba(63,185,80,.08); padding:12px 16px; border-radius:6px; }
+  .warn { border-left:4px solid var(--warn); background:rgba(210,153,34,.08); padding:12px 16px; border-radius:6px; }
+  table { width:100%; border-collapse:collapse; margin:10px 0 18px; font-size:.9rem; }
+  th,td { border:1px solid var(--border); padding:8px 10px; text-align:right; }
+  th:first-child,td:first-child { text-align:left; }
+  th { background:#11151c; color:#c9d1d9; }
+  .up { color:var(--done); font-weight:600; }
+  .down { color:var(--bad); font-weight:600; }
+  li { margin:6px 0; }
+  code { background:#0b0d11; padding:1px 6px; border-radius:4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>피처셋 승격과 첫 제출 파이프라인 설계</h1>
+  <div class="sub">2026-07-27 KST · Codex → Claude 이관 후 첫 작업 · 설계 확정 단계</div>
+  <div class="panel">
+    <h2>완료 범위</h2>
+    <ul>
+      <li>Codex에서 진행한 마지막 작업(PR #7 터빈 공간 풀링)까지의 저장소 상태를 재파악하고, 노트북 랩 결과와 production 경로의 격차를 확인했다.</li>
+      <li>검증된 피처 3종을 파이프라인으로 승격하는 설계서 <code>docs/design/05-feature-set-promotion.md</code> v1.0을 작성했다.</li>
+      <li>코드는 아직 변경하지 않았다. 이번 작업의 산출물은 설계 문서·대시보드 로그·색인뿐이다.</li>
+    </ul>
+
+    <h2>인수인계 상태 진단</h2>
+    <table>
+      <thead><tr><th>영역</th><th>상태</th><th>판단</th></tr></thead>
+      <tbody>
+        <tr><td>재현성 인프라</td><td>metric·train/inference 분리·validator·registry 완료</td><td>추가 작업 불필요</td></tr>
+        <tr><td>피처 랩</td><td>weather grid · wind vector · turbine spatial 3종 검증 완료</td><td>노트북 내부에만 존재</td></tr>
+        <tr><td>production 피처</td><td>grid mean 74개 고정</td><td class="down">랩 개선분 0% 반영</td></tr>
+        <tr><td>모델</td><td>RandomForest만</td><td>M2~M6 미착수</td></tr>
+        <tr><td>validation</td><td>2024 단일 holdout(F0)</td><td>F1~F4 미구현</td></tr>
+        <tr><td>리더보드 제출</td><td>0회</td><td class="down">local↔Public 기울기 미확보</td></tr>
+        <tr><td>남은 기간</td><td>마감 2026-08-14 10:00 KST</td><td class="warn">18일</td></tr>
+      </tbody>
+    </table>
+
+    <h2>승격을 막고 있던 구조적 장애물</h2>
+    <ol>
+      <li><strong><code>build_weather_features</code> 이름 충돌</strong> — <code>baram.baseline</code>(mean 고정)과 <code>baram.features.weather_grid</code>(파라미터 있음)가 같은 이름의 다른 계약을 가진다. 조립 계층 없이는 섞을 수 없다.</li>
+      <li><strong>터빈 좌표 로더 부재</strong> — <code>fit_turbine_spatial_pooler</code>가 요구하는 DataFrame을 <code>info.xlsx</code>에서 만드는 코드가 노트북 08 셀에만 인라인으로 존재한다.</li>
+      <li><strong><code>PREPROCESSING_CONTRACT</code> 하드코딩</strong> — <code>statistics: ["mean"]</code>이 상수로 박혀 있어, 피처를 바꾸고 그대로 두면 전처리가 달라져도 <code>preprocessing_sha256</code>가 동일해진다. 재현성 레이어가 거짓 신호를 내는 지점이다.</li>
+      <li><strong>bundle의 단일 feature 목록</strong> — own-group 프리셋은 target마다 다른 컬럼 집합(공통 319 + 자기 그룹 77)을 쓰는데, 현재 bundle은 세 target이 목록 하나를 공유한다.</li>
+    </ol>
+
+    <h2>확정한 프리셋 4종</h2>
+    <table>
+      <thead><tr><th>preset</th><th>features</th><th>랩 total score</th><th>역할</th></tr></thead>
+      <tbody>
+        <tr><td>official_mean</td><td>74</td><td>0.576938</td><td>기본값 · 회귀 기준</td></tr>
+        <tr><td>expanded_vector</td><td>319</td><td>0.586482</td><td>직전 단계 통제군</td></tr>
+        <tr><td>spatial_idw2_all_group</td><td>550</td><td class="up">0.592485</td><td>채택 후보</td></tr>
+        <tr><td>spatial_nearest_own_group</td><td>396</td><td>0.589828</td><td>축소·강건성 대안</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Decision Box</h2>
+    <div class="decision">
+      <strong>기본값 보존 + superset 슬라이스:</strong>
+      피처셋을 <code>FeatureSetConfig</code>로 1급 승격하되 기본값을 <code>official_mean</code>으로 고정해,
+      인자 없는 호출이 승격 전과 100% 동일하게 동작하도록 한다.
+      own-group은 별도 파이프라인을 만들지 않고 all-group superset(550)을 한 번 만든 뒤
+      bundle의 <code>target_feature_columns</code>로 target별 컬럼을 슬라이스한다.
+      median imputer는 컬럼 단위 통계라 superset에 fit해도 부분집합 결과가 같으며, 이 등가성은 테스트로 잠근다.
+      YAML은 프리셋을 <code>extends</code>로 상속해 일부만 덮어쓰는 용도로만 허용하고,
+      <code>config_sha256</code>는 해석이 끝난 최종 config의 정규화 JSON에서 계산해 포맷 차이가 hash를 흔들지 않게 한다.
+    </div>
+
+    <h2>제출 전 게이트</h2>
+    <ul>
+      <li><strong>G1</strong> 전체 <code>pytest -q</code> — 기존 105건 + 신규 전부 통과.</li>
+      <li><strong>G2</strong> golden 회귀 — <code>official_mean</code>의 feature 컬럼 목록·<code>preprocessing_sha256</code>·submission SHA-256이 승격 전과 동일.</li>
+      <li><strong>G3</strong> 점수 재현 — <code>spatial_idw2_all_group</code>의 2024 holdout total이 노트북 08의 0.592485와 일치(허용 오차 1e-9). <strong>실패 시 제출하지 않고 정지한다.</strong></li>
+      <li><strong>G4</strong> 노트북 무결성 00~08 통과.</li>
+      <li><strong>G5</strong> submission validator 통과 + run registry에 run·submission hash 기록.</li>
+    </ul>
+
+    <h2>롤백 전략</h2>
+    <ul>
+      <li>코드 층 — 기본값이 <code>official_mean</code>이라 CLI 인자를 빼면 승격 전 동작으로 복귀한다.</li>
+      <li>테스트 층 — G2 golden 회귀가 CI에서 즉시 잡는다.</li>
+      <li>Git 층 — 9개 독립 커밋으로 분할하고, production 동작은 <strong>7번 커밋(CLI 연결)에서 처음 바뀐다.</strong> 문제가 생기면 7번만 revert해도 복귀한다.</li>
+    </ul>
+
+    <h2>기록한 리스크</h2>
+    <div class="warn">
+      <strong>dependabot PR #2~#5 보류:</strong> pandas 3.0.3 · numpy 2.5.1 · scikit-learn 1.9.0 · pytest 9.1.1 업그레이드는
+      마감 18일 전 시점에서 랩 재현값을 흔들 수 있다. pandas 3.0의 dtype·copy 의미 변경이 특히 위험하므로 대회 종료 후 일괄 처리한다.
+    </div>
+    <ul>
+      <li>2025 test의 LDAPS 47개 forecast-variable 쌍은 16개 grid 전체 결측이다. 공간 pooling으로 복원하지 않고 NaN 보존 후 train-fit median을 적용하는 기존 계약을 그대로 계승한다.</li>
+      <li>GFS는 17기 터빈 전부 같은 grid가 nearest다. 랩에서 기록된 해상도 한계를 이번 작업에서 해결하지 않는다.</li>
+      <li><code>PyYAML</code>과 <code>openpyxl</code>이 <code>requirements-ci.txt</code>에 없다. 구현 시 버전 고정으로 추가해야 CI에서 YAML·<code>info.xlsx</code> 경로 테스트가 돈다.</li>
+      <li>worktree에는 원자료가 없다(<code>.gitignore</code>). 학습·재현 실행은 메인 저장소의 <code>data/raw/open/</code> 경로를 인자로 지정한다.</li>
+    </ul>
+
+    <h2>진척률 재산정</h2>
+    <p>
+      기존 대시보드의 99%는 완료 항목만 나열한 결과였다. 이번 설계에서 남은 작업이
+      피처 승격·첫 제출, seasonal fold, GBM, calibration, 잔여 물리 피처, 발표 산출물로 구체화되어
+      마일스톤 분모를 재산정하고 진척률을 <strong>77%</strong>로 조정했다.
+    </p>
+
+    <h2>다음 작업</h2>
+    <ol>
+      <li>설계서 11절 순서대로 계약 테스트(RED) 작성 → 커밋 1~9 진행.</li>
+      <li>G1~G5 게이트 통과 후 S1(<code>official_mean</code> smoke) · S2(<code>spatial_idw2_all_group</code>) 제출 후보 준비.</li>
+      <li>제출 버튼은 사용자가 직접 누른다. 에이전트는 검증 통과 CSV와 ledger 행까지만 준비한다.</li>
+    </ol>
+    <p>R3에 따라 설계 확정 후 정지하고 보고한다.</p>
+
+    <h2>차단·주의</h2>
+    <ul>
+      <li>현재 차단 없음.</li>
+      <li>이번 작업에서 코드·노트북·모델·제출물은 변경하지 않았다.</li>
+      <li>공식 raw와 사용자 소유 변경은 수정·stage·stash·reset·clean하지 않는다.</li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>

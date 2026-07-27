@@ -16,6 +16,15 @@ import numpy as np
 import pandas as pd
 import sklearn
 
+from baram.feature_config import (
+  DEFAULT_FEATURE_SET,
+  FeatureSetConfig,
+  feature_set_from_dict,
+  feature_set_sha256,
+  feature_set_to_dict,
+  get_feature_set,
+)
+from baram.features.wind_vector import DEFAULT_WIND_VECTOR_SPECS
 from baram.metrics import CAPACITY_KWH, TARGET_COLS
 from baram.reproducibility import (
   normalize_created_at_kst,
@@ -25,7 +34,8 @@ from baram.reproducibility import (
 )
 
 
-MODEL_METADATA_SCHEMA_VERSION = "1.0"
+MODEL_METADATA_SCHEMA_VERSION = "1.1"
+LEGACY_METADATA_SCHEMA_VERSIONS = ("1.0",)
 MODEL_METADATA_ENCODING = "utf-8"
 REGISTRY_ENCODING = "utf-8-sig"
 
@@ -75,6 +85,142 @@ PREPROCESSING_CONTRACT = {
     "upper": CAPACITY_KWH,
   },
 }
+
+_WEATHER_EXCLUDED_COLUMNS = [
+  "data_available_kst_dtm",
+  "grid_id",
+  "latitude",
+  "longitude",
+]
+_CALENDAR_FEATURES = [
+  "month",
+  "day",
+  "hour",
+  "dayofweek",
+  "is_weekend",
+  "hour_sin",
+  "hour_cos",
+  "month_sin",
+  "month_cos",
+]
+
+
+def build_preprocessing_contract(feature_set=None):
+  """피처셋 config에서 전처리 계약을 파생한다.
+
+  하드코딩 상수를 두면 전처리가 바뀌어도 `preprocessing_sha256`가 같아져서
+  재현성 레이어가 거짓 신호를 낸다. `official_mean`에 대해서는 legacy
+  `PREPROCESSING_CONTRACT`와 완전히 같은 dict를 돌려주며, 이 등가성은
+  golden 테스트로 잠근다.
+  """
+  config = get_feature_set(DEFAULT_FEATURE_SET) if feature_set is None else feature_set
+  if not isinstance(config, FeatureSetConfig):
+    raise TypeError("feature_set은 FeatureSetConfig여야 합니다")
+
+  contract = {
+    "weather_cutoff": {
+      "rule": "data_available_kst_dtm <= forecast_kst_dtm",
+      "on_violation": "fail",
+    },
+    "weather_aggregation": {
+      "group_key": "forecast_kst_dtm",
+      "statistics": list(config.statistics),
+      "source_prefixes": ["ldaps", "gfs"],
+      "excluded_columns": list(_WEATHER_EXCLUDED_COLUMNS),
+    },
+  }
+
+  if config.include_lead:
+    contract["lead_feature"] = {
+      "formula": "forecast_kst_dtm - data_available_kst_dtm",
+      "unit": "hour",
+      "aggregation": "first",
+    }
+
+  if config.wind_vector:
+    contract["wind_vector"] = {
+      "derived_from": "raw grid rows before aggregation",
+      "components": ["speed", "wind_from_sin", "wind_from_cos"],
+      "specs": {
+        source: [spec.name for spec in specs]
+        for source, specs in sorted(DEFAULT_WIND_VECTOR_SPECS.items())
+      },
+    }
+
+  if config.spatial is not None:
+    contract["spatial_pooling"] = {
+      "methods": list(config.spatial.methods),
+      "idw_power": config.spatial.idw_power,
+      "scope": config.spatial.scope,
+      "weights": "haversine distance, turbine capacity weighted within group",
+      "fit_scope": "training weather grid geometry",
+    }
+
+  if config.calendar:
+    contract["calendar_features"] = list(_CALENDAR_FEATURES)
+
+  contract["missing_values"] = {
+    "transformer": "sklearn.impute.SimpleImputer",
+    "strategy": "median",
+    "fit_scope": "training feature matrix",
+  }
+  contract["target_training"] = {
+    "mask": "target-specific non-null labels",
+    "models": "one model per target",
+  }
+  contract["prediction_bounds"] = {
+    "lower": 0,
+    "upper": CAPACITY_KWH,
+  }
+  return contract
+
+
+def build_feature_set_record(resolved=None, pipeline=None):
+  """metadata sidecar에 남길 피처셋 블록을 만든다."""
+  if resolved is None:
+    legacy = get_feature_set(DEFAULT_FEATURE_SET)
+    return {
+      "name": DEFAULT_FEATURE_SET,
+      "source": "legacy",
+      "resolved_sha256": feature_set_sha256(legacy),
+      "config": feature_set_to_dict(legacy),
+      "scope": None,
+      "feature_count": None,
+      "target_feature_counts": {},
+    }
+
+  config = resolved.config
+  return {
+    "name": config.name,
+    "source": resolved.source,
+    "resolved_sha256": resolved.sha256,
+    "config": feature_set_to_dict(config),
+    "scope": None if config.spatial is None else config.spatial.scope,
+    "feature_count": None if pipeline is None else len(pipeline.feature_columns),
+    "target_feature_counts": (
+      {}
+      if pipeline is None
+      else {
+        target: len(columns)
+        for target, columns in sorted(pipeline.target_feature_columns.items())
+      }
+    ),
+  }
+
+
+def feature_set_from_metadata(metadata):
+  """model metadata sidecar에서 학습에 쓴 피처셋 config를 복원한다.
+
+  schema 1.0 sidecar에는 feature_set 블록이 없으므로 legacy(official_mean)로 본다.
+  """
+  record = (metadata or {}).get("feature_set")
+  if not record:
+    return get_feature_set(DEFAULT_FEATURE_SET)
+  payload = record.get("config")
+  if not payload:
+    return get_feature_set(record.get("name", DEFAULT_FEATURE_SET))
+  return feature_set_from_dict(payload)
+
 
 RUN_REGISTRY_COLUMNS = [
   "created_at_kst",
@@ -218,7 +364,14 @@ def _weather_profile(frame, source_name):
   }
 
 
-def build_training_data_profile(*, train_labels, ldaps_train, gfs_train, train_features):
+def build_training_data_profile(
+  *,
+  train_labels,
+  ldaps_train,
+  gfs_train,
+  train_features,
+  feature_set=None,
+):
   """실제 학습 입력과 baseline 전처리 결과를 JSON 가능한 profile로 만든다."""
   _require_columns(train_labels, ["kst_dtm", *TARGET_COLS], "train_labels")
   if not hasattr(train_features, "X") or not hasattr(train_features, "frame"):
@@ -280,7 +433,9 @@ def build_training_data_profile(*, train_labels, ldaps_train, gfs_train, train_f
       "gfs": _weather_profile(gfs_train, "gfs_train"),
     },
     "feature_matrix": feature_profile,
-    "preprocessing": json.loads(stable_json_dumps(PREPROCESSING_CONTRACT)),
+    "preprocessing": json.loads(
+      stable_json_dumps(build_preprocessing_contract(feature_set))
+    ),
   }
 
 
@@ -348,6 +503,8 @@ def build_model_artifact(
   input_files=None,
   created_at_kst=None,
   validation=None,
+  feature_set=None,
+  feature_pipeline=None,
 ):
   """모델 bytes와 데이터/전처리 lineage sidecar를 메모리에서 만든다."""
   git_commit = str(git_commit or "").strip()
@@ -393,6 +550,9 @@ def build_model_artifact(
     "data_profile": normalized_profile,
     "data_profile_sha256": sha256_text(stable_json_dumps(normalized_profile)),
     "preprocessing_sha256": sha256_text(stable_json_dumps(normalized_preprocessing)),
+    "feature_set": json.loads(
+      stable_json_dumps(build_feature_set_record(feature_set, feature_pipeline))
+    ),
     "model": {
       "model_type": type(bundle).__name__,
       "model_module": type(bundle).__module__,
@@ -760,9 +920,13 @@ def update_run_registry_submission(
 
 
 __all__ = [
+  "LEGACY_METADATA_SCHEMA_VERSIONS",
   "MODEL_METADATA_SCHEMA_VERSION",
   "ModelArtifact",
   "PREPROCESSING_CONTRACT",
+  "build_feature_set_record",
+  "build_preprocessing_contract",
+  "feature_set_from_metadata",
   "RUN_REGISTRY_COLUMNS",
   "SavedModelArtifact",
   "append_run_registry_entry",

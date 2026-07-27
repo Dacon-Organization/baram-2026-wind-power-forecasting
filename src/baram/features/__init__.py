@@ -13,6 +13,13 @@ from baram.features.weather_grid import (
   build_weather_features,
   fit_train_median_imputer,
 )
+from baram.features.turbine_metadata import (
+  GROUP_CAPACITY_MW,
+  GROUP_TURBINE_COUNTS,
+  TURBINE_COUNT,
+  load_turbine_locations,
+  parse_dms_coordinate,
+)
 from baram.features.turbine_spatial import (
   DEFAULT_IDW_POWER,
   SPATIAL_POOLING_METHODS,
@@ -34,9 +41,12 @@ __all__ = [
   "EXPECTED_LEAD_RANGE_HOURS",
   "DEFAULT_CALM_SPEED_THRESHOLD",
   "DEFAULT_WIND_VECTOR_SPECS",
+  "GROUP_CAPACITY_MW",
+  "GROUP_TURBINE_COUNTS",
   "SPATIAL_POOLING_METHODS",
   "SPATIAL_STATISTICS",
   "STD_DDOF",
+  "TURBINE_COUNT",
   "TURBINE_LOCATION_COLUMNS",
   "TurbineSpatialPooler",
   "TrainMedianImputer",
@@ -49,4 +59,6 @@ __all__ = [
   "derive_wind_vector_features",
   "fit_train_median_imputer",
   "fit_turbine_spatial_pooler",
+  "load_turbine_locations",
+  "parse_dms_coordinate",
 ]
