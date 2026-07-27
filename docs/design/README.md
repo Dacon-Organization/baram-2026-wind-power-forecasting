@@ -9,6 +9,7 @@
 | [02-data-modeling-spec.md](02-data-modeling-spec.md) | 공식 데이터 공개 전 준비 가능한 스키마 검증, cutoff, 피처, 검증, 모델 후보, Perplexity 운영 설계 |
 | [03-operations-master-plan.md](03-operations-master-plan.md) | 공식 데이터 공개 전 리더보드 제출, 실험 추적, 산출물 검증, 발표 평가 준비 |
 | [04-final-solution-blueprint.md](04-final-solution-blueprint.md) | 공식 데이터·평가 코드·baseline 공개 후 최종 데이터 분석, 모델링, 발표 산출물 설계 |
+| [05-feature-set-promotion.md](05-feature-set-promotion.md) | 노트북 랩에서 검증된 피처 3종의 production 승격, 피처셋 config 레이어, 첫 리더보드 제출 설계 |
 
 ## 작성 전제
 
