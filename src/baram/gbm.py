@@ -114,6 +114,7 @@ def run_window_pooled(
   gfs,
   turbine_locations=None,
   make_estimator=None,
+  train_bounds=None,
 ):
   """세 그룹을 한 모델로 학습한다 (설계서 04 M3).
 
@@ -123,13 +124,21 @@ def run_window_pooled(
   pooled의 실질적 이점은 **학습 라벨이 없는 그룹도 예측할 수 있다**는 것이다.
   Group 3은 2022 라벨이 0행이지만, 2022로 학습한 pooled 모델은 group id만 바꿔
   Group 3을 예측한다. `trained_targets`가 실제로 라벨을 기여한 target을 기록한다.
+
+  `train_bounds`를 주면 `TRAIN_WINDOWS[window_name]` 대신 그 `(시작, 끝)`으로 학습한다.
+  M6 calibration이 학습 창 **내부**의 하위 구간으로 OOF를 만들어야 하는데, 그 구간들을
+  `TRAIN_WINDOWS`에 등록하면 fold 정의가 파생 구간으로 오염된다 — 창 정의는 계약이므로
+  건드리지 않고 호출 시점에만 넘긴다. `window_name`은 그때 표시용 이름이 된다.
   """
   from sklearn.impute import SimpleImputer
 
   from baram.feature_pipeline import build_feature_pipeline
 
   make_estimator = make_estimator or make_lightgbm
-  train_start, train_end = TRAIN_WINDOWS[window_name]
+  if train_bounds is not None:
+    train_start, train_end = train_bounds
+  else:
+    train_start, train_end = TRAIN_WINDOWS[window_name]
   train_mask = label_mask(labels, train_start, train_end)
   predict_mask = label_mask(labels, predict_start, predict_end)
 
@@ -145,7 +154,11 @@ def run_window_pooled(
   )
   feature_columns = _shared_feature_columns(pipeline)
 
-  imputer = SimpleImputer(strategy="median")
+  # `keep_empty_features=True`가 없으면 train 구간에서 전부 NaN인 피처 컬럼이 조용히
+  # 사라지고, 바로 아래 DataFrame 생성이 컬럼 수 불일치로 터진다. 등록된 학습 창(6개월
+  # 이상)에서는 걸리지 않았지만 M6의 inner OOF는 3개월짜리 구간까지 학습하므로
+  # 위험이 커진다. 값이 바뀌는 경우는 없다 — 전부 NaN이던 컬럼이 중앙값 0으로 남을 뿐이다.
+  imputer = SimpleImputer(strategy="median", keep_empty_features=True)
   train_imputed = pd.DataFrame(
     imputer.fit_transform(pipeline.train_matrix),
     columns=pipeline.feature_columns,
