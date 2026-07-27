@@ -46,8 +46,8 @@
   </div>
 
   <h2>전체 진척률</h2>
-  <div class="bar"><i style="width:82%"></i></div>
-  <div class="barlabel">공식 데이터 공개 후 metric/baseline 재현, train/inference 분리, submission ledger·validator·model registry를 완료했다. Weather/Wind feature lab에 이어 공식 터빈 좌표 기반 spatial pooling을 검증했고, 랩 개선분을 production 파이프라인으로 승격해 2024 holdout total 0.576938 → 0.592485를 재현했다. <strong>2026-07-27 첫 리더보드 제출 2건 완료</strong> — Public은 S1 0.588303, S2 0.606374이며 ledger·registry에 반입됐다. 캘리브레이션 분석 결과 <strong>local↔Public 기울기 1.226은 Public 40% 표본 잡음(paired SD 0.00211)과 구분되지 않으며</strong>, 수준 이동의 주 원인은 FICR 계단 함수로 판별됐다. 다음은 seasonal/time fold(F1~F4)로 순위 확정 문턱을 정하는 것이다. 마감 2026-08-14 10:00 KST · 제출 오늘 2/5회 사용.</div>
+  <div class="bar"><i style="width:86%"></i></div>
+  <div class="barlabel">공식 데이터 공개 후 metric/baseline 재현, train/inference 분리, submission ledger·validator·model registry를 완료했다. Weather/Wind feature lab에 이어 공식 터빈 좌표 기반 spatial pooling을 검증했고, 랩 개선분을 production 파이프라인으로 승격해 2024 holdout total 0.576938 → 0.592485를 재현했다. <strong>2026-07-27 첫 리더보드 제출 2건 완료</strong> — Public은 S1 0.588303, S2 0.606374이며 ledger·registry에 반입됐다. 캘리브레이션 분석 결과 <strong>local↔Public 기울기 1.226은 Public 40% 표본 잡음과 구분되지 않으며</strong>, 수준 이동의 주 원인은 FICR 계단 함수로 판별됐다. 이어 F0~F4 seasonal·time fold를 재계산·실행해 <strong>프리셋 순위가 5개 fold 전부 동일함</strong>을 확인했고, 순위 확정 문턱을 fold 간 SD <strong>0.0036</strong>으로 상향했다(기존 0.00211은 과소평가). 다음은 GBM(M2~M3) 도입이며 이 문턱으로 후보를 거른다. 마감 2026-08-14 10:00 KST · 제출 오늘 2/5회 사용.</div>
 
 
   <h2>마일스톤 파이프라인</h2>
@@ -80,8 +80,8 @@
     <li><span class="tag t-done">DONE</span><div>전처리 가드레일 문서화 — 허용/금지 경계, fit 범위 규칙, 코드 대응표, 과적합 위험 평가, 용어 규범, 자가 점검 체크리스트 (설계서 06)</div></li>
     <li><span class="tag t-done">DONE</span><div>첫 리더보드 제출 — S1(official_mean) Public 0.588303, S2(spatial_idw2_all_group) Public 0.606374, ledger·registry 반입 완료</div></li>
     <li><span class="tag t-done">DONE</span><div>local↔Public 캘리브레이션 — 기울기 1.226이 <strong>Public 40% 표본 잡음과 구분되지 않음</strong>(95% 구간 [0.72, 1.28]), 수준 이동의 주 원인은 FICR 계단으로 판별 (노트북 12, 설계서 06 v1.1)</div></li>
-    <li><span class="tag t-progress">NEXT</span><div>시간 강건성 검증 — seasonal/time fold(F1~F4)에서 프리셋 4종 민감도 확인. 이번에 얻은 문턱 <strong>paired 잡음 SD 0.00211</strong>을 fold 간 분산과 비교</div></li>
-    <li><span class="tag t-todo">TODO</span><div>GBM 도입 — LightGBM/CatBoost 그룹별 모델과 pooled 모델 (블루프린트 M2~M3)</div></li>
+    <li><span class="tag t-done">DONE</span><div>시간 강건성 검증 — F0~F4 재계산·실행. <strong>순위가 5개 fold 전부 동일</strong>, 개선분은 fold 간 SD 0.00361로 흔들림. 순위 확정 문턱을 0.00211 → <strong>0.0036</strong>으로 상향 (노트북 13, 설계서 06 v1.2)</div></li>
+    <li><span class="tag t-progress">NEXT</span><div>GBM 도입 — LightGBM/CatBoost 그룹별 모델과 pooled 모델 (블루프린트 M2~M3). 문턱 0.0036과 Decision Box ㉑ 판정 규칙으로 후보를 거른다</div></li>
     <li><span class="tag t-todo">TODO</span><div>metric-aware calibration — FICR 6%/8% 구간 bias 보정 (M6)</div></li>
     <li><span class="tag t-todo">TODO</span><div>잔여 물리 피처 — hub-height 보정, air density, wind power density, LDAPS↔GFS source spread</div></li>
     <li><span class="tag t-todo">TODO</span><div>발표·Short Research Paper 산출물 구성</div></li>
@@ -89,6 +89,11 @@
 
   <h2>작업 로그</h2>
   <div class="cards">
+    <a class="card" href="log/2026-07-27-baram-seasonal-time-fold.html">
+      <div class="date">2026-07-27 (KST) · 노트북 13 · 설계서 02·04·06 갱신</div>
+      <div class="title">seasonal·time fold — 순위는 안정, 크기는 불안정</div>
+      <div class="summary">착수 전 설계 충돌을 발견했다. F1~F4 정의가 설계서 02와 04에 다르게 적혀 있었고, 상위 문서인 04의 F1은 valid가 2024년 1-5월인데 train에 2024 뒷부분이 들어가 <strong>같은 문서 바로 윗줄의 "모든 validation은 시간 순서를 지킨다"를 위반</strong>했다. fold별 목적은 유지하고 구간만 시간 순서를 지키도록 재계산해(Decision Box ⑲) F0~F4를 실행했다. 결과가 두 질문을 갈라놓는다 — <strong>순위는 5개 fold 전부 동일</strong>(채택 후보 언제나 1위)했지만, 개선분 크기는 fold별 0.0125~0.0214로 흔들려 <strong>fold 간 SD 0.00361</strong>이 나왔다. 이는 노트북 12의 40% 표본 잡음 0.00211의 <strong>1.71배</strong>로, 기존 문턱이 과소평가였음을 뜻한다. 흔들림의 주범은 계절이며(계절 변동 폭 0.00894 vs 학습 창 0.00413, 2.2배) 모델을 고정한 채 검증 계절만 옮겨도 개선분이 절반 가까이 줄었다. embargo gap은 <code>src/baram</code> 15개 파일에서 행 간 연산 <strong>0건</strong>을 확인해 두지 않기로 했고(Decision Box ⑳), 검사를 노트북에 상주시켜 조건이 깨지면 드러나게 했다. Decision Box ㉑으로 크기(간격)와 방향(부호 일치)을 분리 판정하는 규칙을 못 박았다. F0 재현은 프리셋 4종 전부 절대 차이 0.0.</div>
+    </a>
     <a class="card" href="log/2026-07-27-baram-local-public-calibration.html">
       <div class="date">2026-07-27 (KST) · 노트북 12 · 설계서 06 v1.1</div>
       <div class="title">local↔Public 캘리브레이션 — 기울기는 잡음과 구분되지 않았다</div>

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BARAM seasonal·time fold 작업 로그</title>
+<style>
+  :root { --bg:#0f1115; --card:#1a1d24; --border:#2a2f3a; --text:#e6e9ef; --muted:#8b93a7; --done:#3fb950; --warn:#d29922; --accent:#58a6ff; --bad:#f85149; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--text); line-height:1.65; }
+  .wrap { max-width:960px; margin:0 auto; padding:36px 20px 64px; }
+  a { color:var(--accent); }
+  h1 { margin:0 0 6px; font-size:1.7rem; }
+  h2 { color:var(--accent); font-size:1.08rem; margin-top:30px; }
+  .sub { color:var(--muted); margin-bottom:24px; }
+  .panel { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px 22px; }
+  .decision { border-left:4px solid var(--done); background:rgba(63,185,80,.08); padding:12px 16px; border-radius:6px; margin:12px 0; }
+  .warn { border-left:4px solid var(--warn); background:rgba(210,153,34,.08); padding:12px 16px; border-radius:6px; margin:12px 0; }
+  .bad { border-left:4px solid var(--bad); background:rgba(248,81,73,.08); padding:12px 16px; border-radius:6px; margin:12px 0; }
+  .scroll { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; margin:10px 0 18px; font-size:.9rem; }
+  th,td { border:1px solid var(--border); padding:8px 10px; text-align:left; }
+  th { background:#11151c; color:#c9d1d9; }
+  li { margin:6px 0; }
+  code { background:#0b0d11; padding:1px 6px; border-radius:4px; }
+  .num { font-variant-numeric:tabular-nums; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>seasonal·time fold (F0~F4)</h1>
+  <div class="sub">2026-07-27 KST · 노트북 13 · 설계서 02·04·06 갱신 · 브랜치 <code>feature/mygithub05253-seasonal-time-fold</code></div>
+
+  <div class="panel">
+    <h2>무엇을 했나</h2>
+    <p>노트북 12가 남긴 순위 확정 문턱 0.00211은 <strong>2024 단일 holdout 하나</strong>에서 잰 값이었다.
+    fold를 5개로 늘려 두 질문을 분리해서 답했다 — <strong>"누가 더 나은가"(순위)</strong>와
+    <strong>"얼마나 더 나은가"(크기)</strong>.</p>
+
+    <div class="bad">
+      <p style="margin:0"><strong>착수 전 발견한 설계 충돌.</strong> F1~F4 정의가 설계서 02와 04에 서로 다르게 적혀 있었다.
+      04(상위 문서)의 F1은 valid가 2024년 1-5월인데 train이 "2022-2023 <strong>+ 2024 일부 제외</strong>"였다 —
+      2024 뒷부분으로 학습해 2024 앞부분을 맞히는 구조로, <strong>같은 문서 바로 윗줄</strong>의
+      "모든 validation은 시간 순서를 지킨다"를 위반한다. 설계서 06 2.1절의 절대 금지 항목이기도 하다.</p>
+    </div>
+
+    <h2>재계산한 fold (Decision Box ⑲)</h2>
+    <p>04의 fold별 <strong>목적</strong>은 유지하고 <strong>구간</strong>만 시간 순서를 지키도록 재계산했다.
+    설계서 02 424행이 "공개 후 label 범위가 다르면 재계산한다"고 이미 지시했고,
+    Group 3 라벨이 <strong>2023-01-01 시작</strong>(2022년 0행)임을 확인해 재계산 조건도 충족했다.</p>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>Fold</th><th>Train</th><th>Valid</th><th>목적</th></tr></thead>
+      <tbody>
+        <tr><td>F0</td><td>2022-01-01 ~ 2023-12-31</td><td>2024 전체</td><td>기존 기준선</td></tr>
+        <tr><td>F1</td><td>2022-01-01 ~ 2023-12-31</td><td>2024-01-01 ~ 05-31</td><td>겨울·봄</td></tr>
+        <tr><td>F2</td><td>2022-01-01 ~ 2023-12-31</td><td>2024-06-01 ~ 10-31</td><td>여름·가을</td></tr>
+        <tr><td>F3</td><td>2023-01-01 ~ 2023-12-31</td><td>2024 전체</td><td>2022 제거 영향</td></tr>
+        <tr><td>F4</td><td>2023-01-01 ~ 2024-06-30</td><td>2024-07-01 ~ 12-31</td><td>최신 분포 rolling</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="sub"><code>train 끝 &lt; valid 시작</code>과 겹침 0을 노트북이 코드로 강제한다.
+    2025-01-01 00:00 경계 행은 어느 fold에도 넣지 않았다.</p>
+
+    <div class="decision">
+      <p style="margin:0"><strong>Decision Box ⑳ — embargo gap을 두지 않는다.</strong>
+      <code>src/baram</code> 15개 파일에서 <code>shift</code>·<code>rolling</code>·<code>expanding</code>·
+      <code>ewm</code>·<code>diff</code>·<code>cum*</code>를 검색해 <strong>0건</strong>을 확인했다.
+      모든 피처가 <code>forecast_kst_dtm</code> 단위라 fold 경계를 넘는 정보가 없다.
+      검사를 노트북에 상주시켜 <strong>행 간 연산을 도입하는 순간 hit가 보고되도록</strong> 했다.</p>
+    </div>
+
+    <h2>결과 1 — 순위는 완전히 안정적이다</h2>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>preset</th><th class="num">F0</th><th class="num">F1</th><th class="num">F2</th><th class="num">F3</th><th class="num">F4</th><th>순위</th></tr></thead>
+      <tbody>
+        <tr><td><code>spatial_idw2_all_group</code></td><td class="num">0.592485</td><td class="num">0.587199</td><td class="num">0.602347</td><td class="num">0.591831</td><td class="num">0.585001</td><td><strong>1위 ×5</strong></td></tr>
+        <tr><td><code>spatial_nearest_own_group</code></td><td class="num">0.589828</td><td class="num">0.584091</td><td class="num">0.601383</td><td class="num">0.588510</td><td class="num">0.581693</td><td>2위 ×5</td></tr>
+        <tr><td><code>expanded_vector</code></td><td class="num">0.586482</td><td class="num">0.581939</td><td class="num">0.595021</td><td class="num">0.587382</td><td class="num">0.576610</td><td>3위 ×5</td></tr>
+        <tr><td><code>official_mean</code></td><td class="num">0.577743</td><td class="num">0.565757</td><td class="num">0.589845</td><td class="num">0.573929</td><td class="num">0.571226</td><td>4위 ×5</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p><strong>5개 fold에서 순위가 한 번도 바뀌지 않았다.</strong> F0 재현은 프리셋 4종 전부
+    노트북 08 기준값과 <strong>절대 차이 0.0</strong> — fold runner가 새 코드가 아니라
+    검증된 코드의 다른 구간임을 확인했다.</p>
+
+    <h2>결과 2 — 크기는 전혀 안정적이지 않다</h2>
+    <div class="warn">
+      <p style="margin:0">통제군 점수가 F1 <span class="num">0.565757</span>에서 F2 <span class="num">0.589845</span>로
+      <strong>0.024088</strong> 차이 난다. 이는 채택 후보의 개선분(0.014743)<strong>보다 크다.</strong>
+      → fold를 넘나들며 절대 점수를 비교하면 안 되고, 같은 fold 안의 차이만 봐야 한다.</p>
+    </div>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>잡음원</th><th class="num">표준편차</th><th>무엇을 재는가</th></tr></thead>
+      <tbody>
+        <tr><td>Public 40% 표본 (노트북 12)</td><td class="num">0.00211</td><td>같은 모델·같은 구간, 표본만 변동</td></tr>
+        <tr><td><strong>fold 간 변동 (이번)</strong></td><td class="num"><strong>0.00361</strong></td><td>검증 구간과 학습 창이 변동</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p><strong>문턱이 1.71배 올라갔다.</strong> 노트북 12의 0.00211은 표본 변동만 담은 과소평가였다.
+    채택 후보 Δ는 fold별 0.012503~0.021442로 흔들렸다.</p>
+
+    <h2>결과 3 — 흔들림의 주범은 계절이다</h2>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>변동 성분</th><th>fold</th><th class="num">폭</th></tr></thead>
+      <tbody>
+        <tr><td>계절 변동 (모델 고정)</td><td>F1 · F2</td><td class="num"><strong>0.00894</strong></td></tr>
+        <tr><td>학습 창 변동</td><td>F0 · F3 · F4</td><td class="num">0.00413</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>모델을 전혀 바꾸지 않고 검증 계절만 옮겼는데 개선분이 0.0214 → 0.0125로 줄었다.
+    학습 데이터를 늘리고 줄이는 것보다 <strong>어디서 재는가</strong>가 추정치를 2.2배 크게 좌우한다.
+    개선분은 어느 fold에서도 FICR이 주도해, 노트북 11·12가 본 구조가 fold를 바꿔도 유지됐다.</p>
+    <p class="sub">실용적 함의: 2025 제출 구간은 1~12월 전체라 계절이 평균된다.
+    따라서 제출 판단의 기준선은 계절 fold가 아니라 연 단위인 F0이다.</p>
+
+    <h2>Decision Box ㉑ — 크기와 방향을 따로 판정한다</h2>
+    <div class="decision">
+      <div class="scroll">
+      <table>
+        <thead><tr><th>상황</th><th>판정</th></tr></thead>
+        <tbody>
+          <tr><td>간격 &gt; 0.0036</td><td>순위 확정</td></tr>
+          <tr><td>간격 ≤ 0.0036 이지만 모든 fold에서 부호 일치</td><td><strong>잠정 채택</strong>, 제출로 뒤집지 않음</td></tr>
+          <tr><td>간격 ≤ 0.0036 이고 부호가 흔들림</td><td>순위 미확정 — 더 단순한 후보 유지</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p style="margin:0">1·2위 간격은 fold별 0.00096~0.00332(평균 0.00267)로 문턱 아래지만
+      <strong>부호가 5/5 일치</strong>한다 → 두 번째 칸. <code>spatial_idw2_all_group</code>의 1위 유지는
+      타당하되 "2위보다 확실히 낫다"고 주장하지 않는다.</p>
+    </div>
+
+    <h2>그림 4종</h2>
+    <ul>
+      <li>F0~F4 시간축 배치 — valid가 항상 train 오른쪽, Group 3 라벨 시작선과 제출 구간 시작선</li>
+      <li>fold별 점수(수준은 크게 다름)와 순위 궤적(전부 수평)</li>
+      <li>개선분의 fold 간 변동에 두 잡음 밴드를 겹친 그림, 1·2위 간격 대 문턱</li>
+      <li>변동 출처 분해(계절 vs 학습 창)와 fold별 1-NMAE·FICR 개선분</li>
+    </ul>
+
+    <h2>문서 갱신</h2>
+    <ul>
+      <li><code>02-data-modeling-spec.md</code> — 6.2절 fold 표 재계산, 6.3절의 "40:60을 공식 사실로 쓰지 않는다"를 공개 후 확정으로 교체</li>
+      <li><code>04-final-solution-blueprint.md</code> — 6절 fold 표 시간 순서 정정과 정정 사유 명시</li>
+      <li><code>06-preprocessing-guardrails.md</code> v1.1 → <strong>v1.2</strong> — 5.2절에 F0~F4 결과, 5.4절 문턱을 0.0036으로 상향, 체크리스트·요약표 반영</li>
+    </ul>
+
+    <h2>검증</h2>
+    <ul>
+      <li>F0 재현 게이트 — 프리셋 4종 전부 <strong>절대 차이 0.0</strong> (1e-9)</li>
+      <li>모든 fold 시간 순서 준수·train/valid 겹침 0 (코드 강제, 위반 시 예외)</li>
+      <li>행 간 연산 <strong>0건</strong> (15개 소스 파일 스캔)</li>
+      <li><code>python -m pytest -q</code> — <strong>237 passed</strong></li>
+      <li><code>python scripts/check_notebook_integrity.py</code> — <strong>14개 통과</strong></li>
+      <li>markdownlint — 0 issues · 라벨 실제값 SHA-256 불변 · 원자료 무수정 · 산출물 파일 없음(분석 전용)</li>
+    </ul>
+
+    <div class="warn">
+      <p style="margin:0"><strong>한계.</strong> 다섯 fold의 valid가 전부 2024 안에 있다 — Group 3 라벨이 2023부터라
+      검증을 2023으로 옮기는 fold를 만들 수 없기 때문이며, <strong>"다른 해에서도 순위가 유지되는가"는
+      여전히 답하지 못했다.</strong> 또 F0·F1·F2는 학습 창을 공유하고 F1·F2는 F0 검증 구간의 부분집합이라
+      다섯 fold가 서로 독립이 아니다 — 부호 일치 5/5를 독립 시행으로 셈하면 안 되고,
+      fold 간 SD도 표준오차가 아니라 변동 폭의 척도로 읽어야 한다.</p>
+    </div>
+
+    <h2>다음 단계</h2>
+    <div class="decision">
+      <p style="margin:0">설계서 04 7.1절 M2 — LightGBM/CatBoost 도입. 이번에 얻은 문턱 <strong>0.0036</strong>과
+      Decision Box ㉑의 판정 규칙이 그 후보들을 거르는 기준이 된다. GBM은 후보 수를 크게 늘리므로
+      문턱 없이 들어가면 설계서 06 5.1절이 경고한 holdout 과적합이 바로 시작된다.</p>
+    </div>
+  </div>
+</div>
+</body>
+</html>
