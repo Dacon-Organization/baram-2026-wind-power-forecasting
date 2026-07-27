@@ -158,6 +158,11 @@ src/baram/
 └── inference.py               [수정] metadata에서 피처셋 자동 복원
 
 configs/feature_sets/          [신규] YAML 오버라이드 보관 (선택 사용)
+
+notebooks/
+├── 09_feature_set_contract_lab.ipynb        [신규] 계약 검증
+├── 10_feature_pipeline_assembly_lab.ipynb   [신규] 조립·등가성 검증
+└── 11_promotion_scoreboard.ipynb            [신규] 점수 재현·제출 후보
 ```
 
 ### 4.2 `FeatureSetConfig` 스키마
@@ -368,6 +373,38 @@ worktree에는 원자료가 없으므로(`.gitignore`) 경로는 메인 저장�
 
 허용 오차: RandomForest는 seed 고정 시 `n_jobs`와 무관하게 결정론적이므로 `1e-9`를 넘는 차이는 실패로 본다.
 
+### 7.3 검증 노트북 — 단계별 분리
+
+`.py` 단위 테스트는 계약이 깨졌는지만 알려준다. 왜 그렇게 설계했고 어떤 근거로 채택했는지는
+실행 결과가 남는 분석 노트북에 기록한다. 이는 03조 노트북 서사 구조를 BARAM 표준으로 채택한
+`04-final-solution-blueprint.md` 1.1절 결정의 연장이다.
+
+**한 노트북에 전 과정을 담지 않는다.** 단계별로 분리해 각 노트북이 하나의 질문만 닫는다.
+
+| 노트북 | 닫는 질문 | Decision Box |
+|--------|-----------|--------------|
+| `09_feature_set_contract_lab.ipynb` | 피처셋을 config로 표현하면 재현성 계약이 유지되는가 | ①~⑤ |
+| `10_feature_pipeline_assembly_lab.ipynb` | 조립 순서와 fit 경계가 train/test 대칭을 보장하는가 | ⑥~⑩ |
+| `11_promotion_scoreboard.ipynb` | 승격한 파이프라인이 랩 점수를 재현하고 제출 가능한가 | ⑪~⑮ |
+
+서사 규약:
+
+| 규약 | 내용 |
+|------|------|
+| 도입 | 첫 셀에 연구 질문과 목차를 제시한다 |
+| Decision Box | 노트북을 가로질러 ①부터 연속 번호를 매긴다. 선택지·근거·채택을 함께 적는다 |
+| 소제목 | 결과 절의 제목은 주장문으로 쓴다. "① 재현성 계약 결과"가 아니라 "official_mean은 파생 후에도 같은 hash를 유지한다" |
+| 파일럿 → 전체 | 작은 표본으로 먼저 검증하고 전체를 실행한다 |
+| robustness | 채택 근거가 파라미터 하나에 의존하면 sweep 절을 덧붙인다 |
+| 해석 | 모든 코드 셀 뒤에 관찰·해석·다음 판단 문단을 둔다 |
+| 종합 결론 | 마지막에 연구 질문 / 단계별 요약 / 주요 발견 / 시사점 / 한계 / 요약 6소절 |
+
+무결성 제약(`scripts/check_notebook_integrity.py`):
+
+- `consecutive_code_pairs == 0` — **코드 셀이 연달아 오면 실패한다.** 해석 마크다운이 반드시 사이에 있어야 한다.
+- `missing_execution == 0`, `error_outputs == 0` — 실제로 실행해 출력이 남은 상태로 저장해야 한다.
+- `replacement_chars == 0`, `triple_question_runs == 0` — 한글 인코딩 깨짐 금지.
+
 ---
 
 ## 8. 제출 운영
@@ -431,7 +468,8 @@ worktree에는 원자료가 없으므로(`.gitignore`) 경로는 메인 저장�
 | 6 | `✨ Feat: preprocessing contract 파생과 metadata schema 1.1` | hash 계산 경로 변경, 값은 동일 | 가능 |
 | 7 | `✨ Feat: train/inference CLI 피처셋 연결` | **여기서 처음 동작 변화** | 가능 |
 | 8 | `✅ Test: official_mean golden 회귀와 점수 재현 검증` | 없음 | — |
-| 9 | `📝 Docs: 설계서 05와 대시보드 로그` | 없음 | — |
+| 9 | `📝 Docs: 검증 노트북 09·10·11 추가` | 없음 | 가능 |
+| 10 | `📝 Docs: 설계서 05 버전업과 대시보드 로그` | 없음 | — |
 
 7번 커밋 이전까지는 production 경로가 전혀 바뀌지 않는다.
 문제가 생기면 7번만 되돌려도 승격 전 상태로 복귀한다.
@@ -453,9 +491,11 @@ worktree에는 원자료가 없으므로(`.gitignore`) 경로는 메인 저장�
 | 3 | 조립기·bundle 확장 구현 | 커밋 4~5 |
 | 4 | contract 파생·metadata 1.1 | 커밋 6 |
 | 5 | CLI 연결 | 커밋 7 |
-| 6 | G1~G4 게이트 실행 | 커밋 8 |
-| 7 | 제출 CSV 생성 + ledger 준비 | `outputs/submissions/` (미커밋) |
-| 8 | 대시보드 로그 + 문서 | 커밋 9 |
+| 6 | G1~G2 게이트 실행 | 커밋 8 |
+| 7 | 검증 노트북 09·10·11 작성과 실행 | 커밋 9 |
+| 8 | G3~G5 게이트 실행 | — |
+| 9 | 제출 CSV 생성 + ledger 준비 | `outputs/submissions/` (미커밋) |
+| 10 | 대시보드 로그 + 설계서 버전업 | 커밋 10 |
 
 ---
 
@@ -487,3 +527,5 @@ R3 원칙에 따라 아래는 이번 작업에서 착수하지 않는다.
 | 2026-07-27 | `config_sha256`를 정규화 JSON에서 계산 | YAML 포맷 차이가 hash를 흔들지 않게 한다 |
 | 2026-07-27 | S1 smoke → S2 채택 후보 2회 제출 | 두 점이 있어야 local↔Public 기울기를 추정할 수 있다 |
 | 2026-07-27 | dependabot PR #2~#5를 마감까지 보류 | pandas 3.0 등 breaking change가 랩 재현값을 흔들 수 있고, 남은 기간이 18일이다 |
+| 2026-07-27 | 검증을 `.py` 테스트와 분석 노트북 두 층으로 나눔 | 단위 테스트는 계약 위반만 알려주고 채택 근거를 남기지 않는다. 발표 자료로 재사용할 표와 해석이 필요하다 |
+| 2026-07-27 | 노트북을 09·10·11 세 개로 분리 | 참고한 03조 노트북은 전 과정을 한 파일에 담았으나, 단계별로 나눠야 각 노트북이 질문 하나만 닫고 재실행 비용도 줄어든다 |
