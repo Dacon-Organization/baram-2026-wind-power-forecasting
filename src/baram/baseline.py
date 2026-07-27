@@ -31,12 +31,24 @@ class BaselineFeatureSet:
 
 @dataclass
 class RandomForestBaselineBundle:
-  """target별 RandomForest와 공통 imputer를 묶은 inference bundle."""
+  """target별 RandomForest와 공통 imputer를 묶은 inference bundle.
+
+  `feature_columns`는 imputer를 fit한 superset이고, `target_feature_columns`는
+  target별로 실제 학습에 쓴 컬럼이다. own_group 공간 피처처럼 target마다 사용
+  컬럼이 다른 경우에만 둘이 달라지며, 그 외에는 세 target 모두 superset을 쓴다.
+  """
 
   imputer: SimpleImputer
   models: dict
   feature_columns: list
   train_rows: dict
+  target_feature_columns: dict = None
+
+  def __post_init__(self):
+    if self.target_feature_columns is None:
+      self.target_feature_columns = {
+        target: list(self.feature_columns) for target in self.models
+      }
 
 
 def _require_columns(frame, required_columns, frame_name):
@@ -144,8 +156,39 @@ def build_inference_features(sample_submission, ldaps_frame, gfs_frame):
   return BaselineFeatureSet(frame=merged, X=X, weather=weather)
 
 
-def train_random_forest_baseline(X_train, train_frame, model_params=None):
-  """target별 non-null mask로 RandomForest baseline을 학습한다."""
+def _resolve_target_feature_columns(target_feature_columns, feature_columns):
+  """target별 학습 컬럼을 검증하고 superset 순서로 정규화한다."""
+  if target_feature_columns is None:
+    return {target: list(feature_columns) for target in TARGET_COLS}
+
+  missing_targets = [target for target in TARGET_COLS if target not in target_feature_columns]
+  if missing_targets:
+    raise ValueError(f"target_feature_columns에 빠진 target: {missing_targets}")
+
+  available = set(feature_columns)
+  resolved = {}
+  for target in TARGET_COLS:
+    columns = list(target_feature_columns[target])
+    if not columns:
+      raise ValueError(f"{target}의 학습 컬럼은 하나 이상이어야 합니다")
+    unknown = [column for column in columns if column not in available]
+    if unknown:
+      raise ValueError(f"{target}에 feature matrix에 없는 컬럼: {unknown}")
+    resolved[target] = columns
+  return resolved
+
+
+def train_random_forest_baseline(
+  X_train,
+  train_frame,
+  model_params=None,
+  target_feature_columns=None,
+):
+  """target별 non-null mask로 RandomForest baseline을 학습한다.
+
+  imputer는 superset 전체에 fit한다. median은 컬럼 단위 통계이므로 부분집합에
+  fit한 결과와 값이 같고, target마다 imputer를 따로 두지 않아도 된다.
+  """
   _require_columns(train_frame, TARGET_COLS, "train_frame")
   if len(X_train) != len(train_frame) or not X_train.index.equals(train_frame.index):
     raise ValueError("X_train과 train_frame의 index/행 수가 일치해야 합니다")
@@ -154,6 +197,7 @@ def train_random_forest_baseline(X_train, train_frame, model_params=None):
   if model_params is not None:
     params.update(model_params)
   feature_columns = list(X_train.columns)
+  resolved_columns = _resolve_target_feature_columns(target_feature_columns, feature_columns)
 
   imputer = SimpleImputer(strategy="median")
   X_train_imputed = pd.DataFrame(
@@ -169,7 +213,10 @@ def train_random_forest_baseline(X_train, train_frame, model_params=None):
     if not train_mask.any():
       raise ValueError(f"{target} 학습 가능한 non-null label이 없습니다")
     model = RandomForestRegressor(**params)
-    model.fit(X_train_imputed.loc[train_mask], train_frame.loc[train_mask, target])
+    model.fit(
+      X_train_imputed.loc[train_mask, resolved_columns[target]],
+      train_frame.loc[train_mask, target],
+    )
     models[target] = model
     train_rows[target] = int(train_mask.sum())
 
@@ -178,6 +225,7 @@ def train_random_forest_baseline(X_train, train_frame, model_params=None):
     models=models,
     feature_columns=feature_columns,
     train_rows=train_rows,
+    target_feature_columns=resolved_columns,
   )
 
 
@@ -198,7 +246,8 @@ def predict_random_forest_baseline(bundle, X_predict):
   for target in TARGET_COLS:
     if target not in bundle.models:
       raise ValueError(f"{target} 모델이 bundle에 없습니다")
-    raw_prediction = bundle.models[target].predict(X_imputed)
+    target_columns = bundle.target_feature_columns[target]
+    raw_prediction = bundle.models[target].predict(X_imputed[target_columns])
     predictions[target] = np.clip(raw_prediction, 0, CAPACITY_KWH[target])
 
   return predictions
