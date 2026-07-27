@@ -81,19 +81,24 @@ def testFixedHyperparametersCarryASeed():
   assert CATBOOST_PARAMS["random_seed"] == 42
 
 
-def testEstimatorFactoriesApplyDefaultsAndOverrides():
+def testLightgbmFactoryAppliesDefaultsAndOverrides():
   lightgbm = pytest.importorskip("lightgbm")
-  catboost = pytest.importorskip("catboost")
-  from baram.gbm import make_catboost, make_lightgbm
+  from baram.gbm import make_lightgbm
 
   model = make_lightgbm()
   assert isinstance(model, lightgbm.LGBMRegressor)
   assert model.get_params()["n_estimators"] == LIGHTGBM_PARAMS["n_estimators"]
   assert make_lightgbm(n_estimators=5).get_params()["n_estimators"] == 5
 
-  boosted = make_catboost()
-  assert isinstance(boosted, catboost.CatBoostRegressor)
-  assert boosted.get_params()["iterations"] == CATBOOST_PARAMS["iterations"]
+
+def testCatboostFactoryAppliesDefaultsAndOverrides():
+  # catboost는 requirements-ci.txt에 없다. 설치돼 있을 때만 검사한다.
+  catboost = pytest.importorskip("catboost")
+  from baram.gbm import make_catboost
+
+  model = make_catboost()
+  assert isinstance(model, catboost.CatBoostRegressor)
+  assert model.get_params()["iterations"] == CATBOOST_PARAMS["iterations"]
   assert make_catboost(iterations=7).get_params()["iterations"] == 7
 
 
