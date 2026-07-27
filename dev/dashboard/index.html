@@ -77,6 +77,7 @@
     <li><span class="tag t-done">DONE</span><div>Turbine-aware grid pooling lab — 공식 터빈 좌표 nearest/IDW와 all-group·own-group 범위 비교</div></li>
     <li><span class="tag t-done">DONE</span><div>피처셋 승격·첫 제출 설계 — 프리셋 4종, YAML 오버라이드, 재현성 계약 파생, 롤백 전략 확정</div></li>
     <li><span class="tag t-done">DONE</span><div>피처셋 승격 구현 — CLI <code>--feature-set</code> 연결, 검증 노트북 09·10·11, G1~G5 전부 통과, 채택 후보 2024 holdout 0.592485 절대 차이 0.0으로 재현</div></li>
+    <li><span class="tag t-done">DONE</span><div>전처리 가드레일 문서화 — 허용/금지 경계, fit 범위 규칙, 코드 대응표, 과적합 위험 평가, 용어 규범, 자가 점검 체크리스트 (설계서 06)</div></li>
     <li><span class="tag t-progress">NEXT</span><div>첫 리더보드 제출 — S1(official_mean)·S2(spatial_idw2_all_group) 제출 후보 준비 완료, <strong>사람이 제출 버튼을 누르고</strong> ledger의 Public 점수를 채워 local Δ +0.014742에 대응하는 기울기 추정</div></li>
     <li><span class="tag t-todo">TODO</span><div>시간 강건성 검증 — seasonal/time fold(F1~F4)에서 프리셋 4종 민감도 확인</div></li>
     <li><span class="tag t-todo">TODO</span><div>GBM 도입 — LightGBM/CatBoost 그룹별 모델과 pooled 모델 (블루프린트 M2~M3)</div></li>
@@ -87,6 +88,11 @@
 
   <h2>작업 로그</h2>
   <div class="cards">
+    <a class="card" href="log/2026-07-27-baram-preprocessing-guardrails.html">
+      <div class="date">2026-07-27 (KST) · 설계서 06 v1.0</div>
+      <div class="title">전처리 가드레일 문서화</div>
+      <div class="summary">노트북 09·10·11의 Decision Box 15개에 흩어져 있던 전처리 판단 근거를 한 문서로 모았다. 절대 금지(예보 가용 시각 이후 정보·test 통계 fit·라벨 파생 피처·규정 위반)와 <strong>조건부 허용</strong>(대치·스케일링·보간·피처선택은 금지가 아니라 fit 범위를 train으로 가두면 허용)을 구분하고, 위험 9종을 막는 실제 코드 위치를 대응표로 연결했다. 과적합 절에서 holdout 재사용 위험도를 평가하고, 용어 절에서 validation/test·NMAE 분모·FICR 계단 함수·표기 정밀도를 못 박았다. 근거 문헌 6건(Moscovich &amp; Rosset 2022, Lones, Dwork et al. 2015, Blum &amp; Hardt 2015, Bergmeir &amp; Benítez 2012 등)은 방법론 근거로만 인용하고 대회 데이터 사실로 승격시키지 않는다는 원칙을 명시했다.</div>
+    </a>
     <a class="card" href="log/2026-07-27-baram-feature-set-promotion-implementation.html">
       <div class="date">2026-07-27 (KST) · 설계서 05 v1.1</div>
       <div class="title">피처셋 승격 구현과 첫 제출 후보 준비</div>
