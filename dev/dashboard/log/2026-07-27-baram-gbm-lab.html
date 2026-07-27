@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BARAM GBM 랩 작업 로그</title>
+<style>
+  :root { --bg:#0f1115; --card:#1a1d24; --border:#2a2f3a; --text:#e6e9ef; --muted:#8b93a7; --done:#3fb950; --warn:#d29922; --accent:#58a6ff; --bad:#f85149; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--text); line-height:1.65; }
+  .wrap { max-width:960px; margin:0 auto; padding:36px 20px 64px; }
+  a { color:var(--accent); }
+  h1 { margin:0 0 6px; font-size:1.7rem; }
+  h2 { color:var(--accent); font-size:1.08rem; margin-top:30px; }
+  .sub { color:var(--muted); margin-bottom:24px; }
+  .panel { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px 22px; }
+  .decision { border-left:4px solid var(--done); background:rgba(63,185,80,.08); padding:12px 16px; border-radius:6px; margin:12px 0; }
+  .warn { border-left:4px solid var(--warn); background:rgba(210,153,34,.08); padding:12px 16px; border-radius:6px; margin:12px 0; }
+  .bad { border-left:4px solid var(--bad); background:rgba(248,81,73,.08); padding:12px 16px; border-radius:6px; margin:12px 0; }
+  .scroll { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; margin:10px 0 18px; font-size:.9rem; }
+  th,td { border:1px solid var(--border); padding:8px 10px; text-align:left; }
+  th { background:#11151c; color:#c9d1d9; }
+  li { margin:6px 0; }
+  code { background:#0b0d11; padding:1px 6px; border-radius:4px; }
+  .num { font-variant-numeric:tabular-nums; }
+  .pos { color:var(--done); }
+  .neg { color:var(--bad); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>GBM 랩 (M2·M3)</h1>
+  <div class="sub">2026-07-27 KST · 노트북 15 · <code>src/baram/gbm.py</code> · 설계서 04·06 v1.4 · 브랜치 <code>feature/mygithub05253-gbm-lab</code></div>
+
+  <div class="panel">
+    <h2>무엇을 했나</h2>
+    <p>설계서 04 7.1절의 <strong>M2(그룹별 GBM)</strong>와 <strong>M3(pooled GBM + group id)</strong>를
+    아홉 fold에서 채점했다. 노트북 14가 만든 cross-year fold가 <strong>도입 직후 첫 후보 심사에서
+    바로 값을 했다.</strong></p>
+
+    <div class="decision">
+      <p style="margin:0"><strong>핵심 결과 — 평균은 넷 다 통과, 부호는 둘만 통과.</strong>
+      GBM 네 후보 전부 챔피언 대비 평균 개선분이 문턱(0.0036)의 2.17~2.59배다.
+      그런데 부호까지 보면 <strong>pooled 둘만 9/9</strong>이고 그룹별 둘은 F5·F8에서
+      챔피언 아래로 내려간다. <strong>2024 fold 다섯 개만 봤다면 넷 다 5/5로 통과했을 것이다.</strong></p>
+    </div>
+
+    <h2>후보를 먼저 못 박고 시작했다</h2>
+    <p>GBM은 하이퍼파라미터 하나만 흔들어도 후보가 수십 개가 된다. 설계서 06 5.1절이
+    "후보가 늘면 위험이 커진다"고 예고한 지점이라, 후보 6종을 <strong>사전 등록</strong>하고
+    피처셋을 <code>spatial_idw2_all_group</code>으로 고정했다. fold 성적을 보고 조정하면
+    그 fold는 검증셋이 아니라 학습셋이 된다 (Decision Box ㉔). early stopping도 같은 이유로 쓰지 않았다.</p>
+
+    <h2>아홉 fold 채점 — 챔피언 <code>rf_spatial</code> 대비 Δ</h2>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>후보</th><th class="num">Δ 평균</th><th class="num">Δ 최소</th><th class="num">문턱 대비</th><th class="num">부호 (9 fold)</th><th class="num">부호 (2024만)</th><th>판정</th></tr></thead>
+      <tbody>
+        <tr><td><code>cat_pooled</code></td><td class="num">0.009333</td><td class="num">0.000118</td><td class="num">2.59배</td><td class="num pos"><strong>9/9</strong></td><td class="num">5/5</td><td class="pos"><strong>우위 확정</strong></td></tr>
+        <tr><td><code>lgbm_pooled</code></td><td class="num">0.009039</td><td class="num">0.000605</td><td class="num">2.51배</td><td class="num pos"><strong>9/9</strong></td><td class="num">5/5</td><td class="pos"><strong>우위 확정</strong></td></tr>
+        <tr><td><code>cat_pergroup</code></td><td class="num">0.008914</td><td class="num neg">−0.001419</td><td class="num">2.48배</td><td class="num neg">8/9</td><td class="num">5/5</td><td class="neg">미확정 (F5 음수)</td></tr>
+        <tr><td><code>lgbm_pergroup</code></td><td class="num">0.007826</td><td class="num neg">−0.003825</td><td class="num">2.17배</td><td class="num neg">7/9</td><td class="num">5/5</td><td class="neg">미확정 (F5·F8 음수)</td></tr>
+        <tr><td><code>rf_official_mean</code> (통제군)</td><td class="num neg">−0.014210</td><td class="num neg">−0.021442</td><td class="num">−3.95배</td><td class="num">0/9</td><td class="num">0/5</td><td>열위 확정</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>챔피언 <code>rf_spatial</code>은 <strong>아홉 fold 어디에서도 1위가 아니다.</strong>
+    GBM이 챔피언을 앞선 fold는 36칸 중 <strong>33칸</strong>이다. 다만 오른쪽 두 칸을
+    비교하면 이 노트북에서 가장 중요한 줄이 보인다 — <strong>2024만 봤다면 네 후보 모두
+    "5/5 부호 일치"로 통과했다.</strong> 검증 연도를 셋으로 넓히자 그룹별 둘이 걸러졌다.</p>
+
+    <h2>판정 규칙에 구멍이 있었다</h2>
+    <div class="bad">
+      <p style="margin:0"><strong>설계서 06 5.4절 첫째 칸을 그대로 읽으면 <code>lgbm_pergroup</code>도 "확정"이 된다.</strong>
+      기존 첫째 칸은 "간격 &gt; 0.0036이면 순위 확정"이라 <strong>크기만</strong> 봤다.
+      그런데 이 후보는 평균이 문턱의 2.17배이면서 F5에서 −0.003825, F8에서 −0.001356으로
+      챔피언 아래다. <strong>평균이 큰 것과 어디서나 나은 것은 다른 주장이다.</strong></p>
+    </div>
+    <p>노트북 14가 둘째 칸에는 연도 조건을 걸었지만 첫째 칸에는 걸지 않았다. 당시에는
+    <strong>크기가 문턱을 넘으면서 부호가 흔들리는 후보가 없어</strong> 드러나지 않았을 뿐이고,
+    이번에 그 조합이 실제로 나왔다.</p>
+
+    <div class="decision">
+      <p style="margin:0 0 8px"><strong>Decision Box ㉕ — 첫째 칸에도 부호 조건을 건다 (설계서 06 v1.4)</strong></p>
+      <div class="scroll">
+      <table style="margin:0">
+        <thead><tr><th>상황</th><th>판정</th></tr></thead>
+        <tbody>
+          <tr><td>간격 &gt; 0.0036 <strong>이고</strong> 검증 연도를 덮는 fold 전부에서 부호 일치</td><td>순위 확정</td></tr>
+          <tr><td>간격 ≤ 0.0036 이지만 검증 연도 둘 이상을 덮는 fold 전부에서 부호 일치</td><td>잠정 채택</td></tr>
+          <tr><td>부호가 흔들림 (<strong>크기와 무관</strong>)</td><td>순위 미확정</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p style="margin:8px 0 0">셋째 칸이 "크기와 무관"으로 바뀐 것이 같은 결정의 뒷면이다 —
+      <strong>부호가 흔들리면 크기는 보지 않는다.</strong></p>
+    </div>
+
+    <h2>9/9라고 다 같은 9/9는 아니다</h2>
+    <div class="warn">
+      <p style="margin:0"><code>cat_pooled</code>의 F8 간격은 <strong>0.000118</strong>이고
+      fold 내부 bootstrap에서 <strong>P(Δ&gt;0) = 0.523</strong>이다 — 동전 던지기와 구분되지 않는다.
+      부호는 양수라 9/9에 포함되지만, 그 한 칸이 다른 칸과 같은 무게를 갖지는 않는다.
+      <code>cat_pooled</code>를 작업 모델로 올리지 않은 또 하나의 이유다.</p>
+    </div>
+
+    <h2>비용을 함께 읽는다</h2>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>후보</th><th class="num">총 학습 시간</th><th class="num">챔피언 대비</th></tr></thead>
+      <tbody>
+        <tr><td><code>rf_spatial</code> (챔피언)</td><td class="num">66.5s</td><td class="num">1.00배</td></tr>
+        <tr><td><code>lgbm_pergroup</code></td><td class="num">148.0s</td><td class="num">2.23배</td></tr>
+        <tr><td><code>lgbm_pooled</code></td><td class="num">185.1s</td><td class="num">2.78배</td></tr>
+        <tr><td><code>cat_pooled</code></td><td class="num">437.1s</td><td class="num">6.57배</td></tr>
+        <tr><td><code>cat_pergroup</code></td><td class="num">1,082.4s</td><td class="num">16.28배</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>CatBoost 합계 1,519.5s vs LightGBM 합계 333.1s — <strong>4.56배</strong>인데
+    점수 차이는 문턱의 <strong>0.08배</strong>다. 비용 차이가 점수 차이보다 훨씬 크다.</p>
+
+    <div class="decision">
+      <p style="margin:0 0 8px"><strong>Decision Box ㉖ — pooled GBM으로 전환, 작업 모델은 <code>lgbm_pooled</code></strong></p>
+      <p style="margin:0 0 8px"><strong>근거의 종류에 주의할 것.</strong> pooled를 고르는 이유는
+      "점수가 높아서"가 <strong>아니다</strong> — pooled와 그룹별의 차이는 문턱의 0.23배로 확정할 수 없다.
+      이유는 <strong>pooled의 챔피언 대비 우위만 아홉 fold를 견뎠다</strong>는 것이다.</p>
+      <ul style="margin:0">
+        <li>모델 계열 — GBM pooled로 전환. RandomForest는 통제군·재현 기준선으로만 남긴다</li>
+        <li>작업 모델 — <code>lgbm_pooled</code>. CatBoost와 점수가 구분되지 않는데 4.56배 싸다</li>
+        <li>그룹별 GBM — 후보에서 내린다. 다시 올리려면 부호가 아홉 fold에서 일치해야 한다</li>
+        <li><code>cat_pooled</code> — 최종 제출 후보로만 남긴다</li>
+        <li>제출 — <strong>하지 않는다.</strong> M6 calibration 이후 후보를 모아 한 번에 판정한다</li>
+      </ul>
+    </div>
+
+    <h2>부수 발견 — pooled는 라벨 없는 그룹을 예측한다</h2>
+    <p>F7은 train이 2022뿐이라 Group 3 라벨이 0행이고, 그룹별 모델은 Group 3을 아예 학습할 수
+    없어 채점에서 빠진다. pooled는 group id만 바꿔 Group 3을 내놓아 <strong>3그룹 채점이 성립한다</strong>
+    (<code>lgbm_pooled</code> 0.582940).</p>
+    <div class="warn">
+      <p style="margin:0"><strong>다만 "그 전이가 좋다"고는 주장하지 않는다.</strong>
+      F7의 3그룹 점수(0.582940)는 Group 3 라벨을 쓴 F6(0.578397)보다 오히려 높지만,
+      두 fold는 학습 창도 검증 구간도 달라 <strong>수준을 비교할 수 없다.</strong>
+      높게 나왔다는 사실을 전이가 잘 됐다는 근거로 쓸 수 없다.</p>
+    </div>
+
+    <h2>실행 환경 — 노트북 하나가 로컬과 Colab 양쪽에서 돈다</h2>
+    <p>노트북 첫 셀에 <strong>환경 부트스트랩</strong>을 넣었다. 로컬에서는
+    <code>google.colab</code> import가 실패해 버전만 보고하고 넘어가고, Colab에서는 저장소를
+    고정 커밋으로 clone하고 Drive의 원자료를 <code>data/raw/open</code>에 링크한 뒤 다섯 패키지를 고정한다.
+    환경별로 노트북을 가르면 어느 쪽이 정본인지 모르게 되고, 그 순간 재현 주장이 무너진다.</p>
+    <p>설치된 버전과 <strong>실제로 import되는 버전은 다를 수 있다</strong> — pip로 새 버전을 깔아도
+    이미 import된 모듈은 그대로 남고, <code>dist-info</code>가 중복된 환경에서는 metadata가 엉뚱한 값을
+    돌려준다(이 저장소의 로컬 환경이 실제로 그랬다: pandas <code>None</code>, sklearn <code>1.5.1</code>).
+    그래서 부트스트랩은 설치 판단만 metadata로 하고 <strong>보고와 판정은 import되는 버전으로</strong> 한다.</p>
+
+    <h2>같이 들어간 도구 — <code>scripts/run_notebook_live.py</code></h2>
+    <p><code>nbconvert --execute</code>는 진행률을 볼 수 없고(노트북의 print는 stdout이 아니라
+    셀 출력으로 들어가고 <code>--inplace</code>는 끝날 때 한 번에 쓴다) 중간에 실패하면 그때까지의
+    출력도 남지 않는다. 이번 33분 실행에서 둘 다 물려서, 셀 단위로 경과 시간을 찍고
+    매 셀마다 저장하는 러너를 만들었다. 반복 실행이 많은 M6에서 값을 한다.</p>
+
+    <h2>검증</h2>
+    <ul>
+      <li><strong>F0 재현 게이트(1e-9) 통과</strong> — RF 두 후보가 노트북 14와 <strong>절대 차이 0.0</strong>.
+        버전 고정(numpy 1.26.4 / pandas 3.0.3 / scikit-learn 1.9.0 / lightgbm 4.7.0 / catboost 1.2.10)이 정확히 먹었다</li>
+      <li>노트북 무결성 <strong>16개 통과</strong> (15 → 16) — 미실행 0 · 에러 출력 0 · 연속 code 쌍 0 · 치환 문자 0</li>
+      <li><strong>269 tests 통과</strong></li>
+      <li>그림 2종을 실제로 열어 확인. 제목이 데이터와 일치하는지 대조했다</li>
+      <li>markdown 주장 7건을 실제 출력과 대조해 수정 — 비용 비율(5.1배 → <strong>4.56배</strong>),
+        개선분 증분(0.0090 → <strong>0.0093</strong>), <strong>F7 3그룹 점수의 대소 방향이 반대로 적혀 있던 것</strong>,
+        FICR 근거가 이 노트북에 표시되지 않는데 주장하던 것, 상호참조 번호</li>
+    </ul>
+
+    <h2>한계</h2>
+    <ul>
+      <li>하이퍼파라미터를 탐색하지 않았다. "GBM이 이긴다"에는 보수적이지만 "얼마나"에는 아니다</li>
+      <li>피처셋을 고정했다. GBM에 맞는 피처셋이 따로 있을 가능성이 남는다</li>
+      <li>지표 분해(1-NMAE vs FICR)를 이 노트북은 계산만 하고 표시하지 않는다.
+        "개선분이 FICR에서 나온다"는 노트북 11·12·13의 관찰이며 <strong>모델을 바꾼 뒤에도 그런지는 확인되지 않았다</strong></li>
+      <li>결정론 — LightGBM·CatBoost에 <code>deterministic=True</code>를 걸지 않았고 <code>n_jobs=-1</code>이다.
+        코어 수가 다르면 미세하게 달라질 수 있으며, <code>cat_pooled</code>의 F8 마진이 0.000118뿐이라
+        부호가 뒤집힐 여지가 있다. <strong>같은 22코어 환경에서는 이전 실행과 소수점 여섯 자리까지 재현됐다</strong></li>
+      <li>아직 제출하지 않았다. 전부 local이며 Public은 40% 표본이다</li>
+    </ul>
+
+    <h2>다음</h2>
+    <ul>
+      <li><strong>M6 — metric-aware calibration</strong> (노트북 16, Decision Box ㉗부터).
+        FICR은 6%·8% 계단 함수이며, 오차율 분포를 계단 경계에 대해 다듬는 것이 남은 가장 큰 지렛대로 보인다.
+        후보가 많아지므로 처음부터 F0~F8 아홉 fold에서 채점하고 Decision Box ㉕ 규칙으로 판정한다</li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>
