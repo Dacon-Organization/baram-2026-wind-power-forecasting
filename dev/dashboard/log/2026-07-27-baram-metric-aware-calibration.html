@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BARAM metric-aware calibration 작업 로그</title>
+<style>
+  :root { --bg:#0f1115; --card:#1a1d24; --border:#2a2f3a; --text:#e6e9ef; --muted:#8b93a7; --done:#3fb950; --warn:#d29922; --accent:#58a6ff; --bad:#f85149; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--text); line-height:1.65; }
+  .wrap { max-width:960px; margin:0 auto; padding:36px 20px 64px; }
+  a { color:var(--accent); }
+  h1 { margin:0 0 6px; font-size:1.7rem; }
+  h2 { color:var(--accent); font-size:1.08rem; margin-top:30px; }
+  .sub { color:var(--muted); margin-bottom:24px; }
+  .panel { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px 22px; }
+  .decision { border-left:4px solid var(--done); background:rgba(63,185,80,.08); padding:12px 16px; border-radius:6px; margin:12px 0; }
+  .warn { border-left:4px solid var(--warn); background:rgba(210,153,34,.08); padding:12px 16px; border-radius:6px; margin:12px 0; }
+  .bad { border-left:4px solid var(--bad); background:rgba(248,81,73,.08); padding:12px 16px; border-radius:6px; margin:12px 0; }
+  .scroll { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; margin:10px 0 18px; font-size:.9rem; }
+  th,td { border:1px solid var(--border); padding:8px 10px; text-align:left; }
+  th { background:#11151c; color:#c9d1d9; }
+  li { margin:6px 0; }
+  code { background:#0b0d11; padding:1px 6px; border-radius:4px; }
+  .num { font-variant-numeric:tabular-nums; }
+  .pos { color:var(--done); }
+  .neg { color:var(--bad); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>metric-aware calibration 착수 (M6)</h1>
+  <div class="sub">2026-07-27 KST · 노트북 16 (실행 대기) · <code>src/baram/calibration.py</code> · 설계서 04·06 · 브랜치 <code>feature/mygithub05253-metric-aware-calibration</code></div>
+
+  <div class="panel">
+    <h2>무엇을 했나</h2>
+    <p>설계서 04 7.1절의 <strong>M6 — metric-aware calibration</strong>을 코드로 완성했다.
+    보정 모듈·단위 테스트·노트북 16이 들어갔고 <strong>노트북 실행은 아직 하지 않았다.</strong>
+    학습 30회(RF 6 + pooled 6 + inner OOF 18)로 로컬 22코어에서 사용자가 실행한다.</p>
+
+    <div class="warn">
+      <p style="margin:0"><strong>이 작업에는 아직 결과가 없다.</strong> 판정 숫자는 하나도
+      들어 있지 않으며, 산문 결론과 Decision Box ㉙의 채택 결과는 실행 후에 채운다.
+      대신 <strong>채택 조건을 결과 이전에 등록했다</strong> — 계단 지표에서 사후에 규칙을
+      고르면 거의 항상 "무언가는 개선됐다"고 말할 수 있기 때문이다.</p>
+    </div>
+
+    <h2>먼저 전제를 점검하게 만들었다</h2>
+    <p>M6를 다음 작업으로 고른 근거는 노트북 11의 "개선분의 <strong>79.6%가 FICR에서 나왔다</strong>"와
+    노트북 13의 "개선분은 어느 fold에서도 FICR이 주도한다"인데, <strong>둘 다 RandomForest 시절의
+    관찰이다.</strong> 노트북 15는 GBM으로 갈면서 <code>one_minus_nmae</code>·<code>ficr</code>를
+    계산해 두고도 표시하지 않았다(노트북 15 7-3절 발견 3). 그래서 노트북 16은 3절에서
+    <strong>지표 분해부터 표시</strong>하고, 전제가 유지되는지를 코드가 판정하게 했다.</p>
+
+    <h2>후보 6종 — 정규화 공간에서 정의한다</h2>
+    <p>보정은 함수 형태 × 목적함수 × 그리드 폭 × fit 범위로 후보가 <strong>곱으로 불어난다.</strong>
+    설계서 06 5.1절이 경고한 지점이라 모델(<code>lgbm_pooled</code>)과 피처셋
+    (<code>spatial_idw2_all_group</code>)을 고정하고 보정만 6종으로 못 박았다.</p>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>후보</th><th>형태</th><th>목적함수</th><th>역할</th></tr></thead>
+      <tbody>
+        <tr><td><code>none</code></td><td>항등</td><td>—</td><td><strong>통제군</strong> — 보정하지 않은 <code>lgbm_pooled</code></td></tr>
+        <tr><td><code>bias_mae</code></td><td><code>p̂ + b</code></td><td>NMAE 최소</td><td>metric-aware의 대조군</td></tr>
+        <tr><td><code>bias_metric</code></td><td><code>p̂ + b</code></td><td>total_score 최대</td><td>가장 단순한 metric-aware</td></tr>
+        <tr><td><code>affine_metric</code></td><td><code>a·p̂ + b</code></td><td>total_score 최대</td><td>수준 + 기울기</td></tr>
+        <tr><td><code>binned_metric</code></td><td>예측 5분위별 <code>p̂ + b_k</code></td><td>total_score 최대</td><td>조건부 편향 교정</td></tr>
+        <tr><td><code>isotonic</code></td><td>isotonic <code>p̂ → ŷ</code></td><td>단조·제곱오차</td><td>유연하지만 metric-aware 아님</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>전부 <strong>설비용량 정규화 공간</strong>(<code>p̂ = 예측 / 설비용량</code>)에서 정의했다.
+    설비용량이 다른 세 그룹이 파라미터 하나를 공유할 수 있고, Group 3 라벨이 0행인 학습 창
+    (<code>W_2022</code>)에서도 보정이 정의된다.</p>
+
+    <div class="decision">
+      <p style="margin:0"><strong><code>bias_mae</code> vs <code>bias_metric</code>이 이 노트북의 핵심 대조다.</strong>
+      함수 형태가 같고 그리드가 같고 fit 데이터가 같다. 다른 것은 목적함수 하나뿐이다.
+      둘이 같은 <code>b</code>를 고른다면 이 데이터에서 계단 구조는 최적 보정을 바꾸지 못한다는
+      뜻이며, "metric-aware"는 이름뿐이 된다. <strong>그것도 결과다.</strong></p>
+    </div>
+
+    <h2>Decision Box ㉗ — 보정은 학습 창 내부 OOF로만 fit한다</h2>
+    <p>검증 fold에 직접 fit하는 것은 설계서 06 2.2절의 절대 금지다. 학습 창을 시간 순 4블록으로
+    나눠 블록 2·3·4를 앞선 블록들로 예측하는 <strong>expanding-window OOF</strong>를 쓴다
+    (창의 뒤쪽 75%를 덮음). 검증 구간 직접 fit은 <strong>상한 진단으로만</strong> 쓰고 표에 누수임을 명시한다.</p>
+    <p><strong>블록 수를 3으로 고른 이유는 "더 쪼개면 더 안정적"이 아니기 때문이다.</strong>
+    6블록으로 늘리면 OOF 표본은 75% → 83%로 10%밖에 안 늘지만(파라미터 1~5개를 맞추는 데 이미
+    수천 행이다) inner 학습 크기가 17%까지 내려간다. 안정성을 결정하는 것은 OOF 행 수가 아니라
+    <strong>inner 모델과 최종 모델의 괴리</strong>이고, 더 쪼개면 그 괴리가 커진다.</p>
+    <p>그래서 블록 수를 늘리는 대신 <strong>추가 학습 0회로 민감도를 직접 보인다.</strong>
+    같은 OOF 예측을 (a) 3블록 전체와 (b) 마지막 블록만(inner 학습 75% — 최종 모델과 가장 잘 맞는
+    조각)으로 다시 fit해 파라미터와 판정을 나란히 놓는다. 두 편향이 반대 방향이므로 판정이 같으면
+    <strong>OOF 분할이 결론을 만들지 않았다는 것이 가정이 아니라 출력으로</strong> 남는다.</p>
+
+    <h2>Decision Box ㉘ — 목적함수는 FICR이 아니라 total_score</h2>
+    <p>FICR은 오차율 6% 안에서 <strong>완전히 평평하다</strong> — 오차 1%와 5.9%가 같은 4원이다.
+    FICR만 최대화하면 이미 안전한 행의 정확도를 얼마든지 버려도 손실이 없고, 그 손실은 1-NMAE에만
+    나타난다. 설계서 04 7.2절의 후보 선택 규칙("FICR 개선 — 1-NMAE가 과도하게 악화되면 제외")을
+    <strong>목적함수 단계에서</strong> 지키는 선택이다. 그리드도 고정했다(bias ±0.06 step 0.001,
+    slope 0.80~1.20 step 0.01) — fold 성적을 보고 넓히면 그 fold는 검증셋이 아니라 학습셋이 된다.</p>
+
+    <h2>오라클 상한 — 후보를 믿기 전에 천장을 먼저 잰다</h2>
+    <p>보정은 파라미터가 1~5개뿐이라 Δ가 작게 나올 것이 거의 확실하다. 그때 <strong>"보정이라는
+    방향 자체가 무력한 것"과 "우리 후보 6종이 약한 것"을 구분할 장치</strong>가 없으면 어느 쪽으로도
+    결론을 낼 수 없다.</p>
+    <p><code>oracle_row_bound(terms, δ)</code>가 행마다 이상적인 <code>±δ</code> 밀기를 허용했을 때의
+    점수를 낸다. 두 지표 모두 오차율에 대해 단조이므로(NMAE는 증가, 단가는 비증가) 행별 최적은
+    오차를 <code>δ</code>만큼 0으로 당기는 것이고 <strong>그 사이에 상충이 없다</strong> — 따라서 이 값은
+    행별 보정 크기가 <code>δ</code> 이하인 <strong>어떤</strong> 보정도 넘을 수 없는 천장이다.
+    상한이 순위 문턱 0.0036보다 작으면 후보 성적을 볼 필요 없이 M6는 기각이다.</p>
+    <p>9절이 간격을 세 층으로 쪼갠다 — <code>OOF fit</code>과 <code>누수 fit</code>의 간격이
+    <strong>표본 밖 fit의 어려움</strong>, <code>누수 fit</code>과 <code>오라클 상한</code>의 간격이
+    <strong>함수 형태의 한계</strong>다. 앞이 크면 fit 방법을, 뒤가 크면 함수 형태를 의심해야 한다.</p>
+
+    <h2>Decision Box ㉙ — 채택 조건을 결과 이전에 등록했다</h2>
+    <p>노트북의 마지막 코드 셀이 아래 다섯 조건을 <strong>기계적으로</strong> 판정하고
+    (C) 채택 / (A) 미채택을 출력한다. 조건은 결과에 맞춰 고치지 않는다.</p>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>조건</th><th>근거</th></tr></thead>
+      <tbody>
+        <tr><td>① Δ 부호가 아홉 fold 전부 양수</td><td>설계서 06 5.4절 셋째 칸 — 부호가 흔들리면 크기는 보지 않는다</td></tr>
+        <tr><td>② Δ 평균 &gt; 0.0036</td><td>첫째 칸 — 측정된 fold 간 변동보다 커야 한다</td></tr>
+        <tr><td>③ OOF 분할 민감도에서 판정 일치</td><td>결론이 우리가 고른 분할의 성질이면 안 된다</td></tr>
+        <tr><td>④ F0 재현 게이트 통과</td><td>실패하면 노트북 14·15와 숫자를 나란히 놓을 수 없다</td></tr>
+        <tr><td>⑤ terms·프레임 경로 일치</td><td>갈리면 노트북의 숫자와 제출물이 다른 것을 가리킨다</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="decision">
+      <p style="margin:0"><strong>설계서 06 5.4절 둘째 칸의 "잠정 채택"도 M6에서는 채택으로 보지 않는다.</strong>
+      보정은 파이프라인에 <strong>상시 붙는 변환</strong>이므로 잠정 근거로 넣으면 이후 모든 실험이
+      그 위에서 이뤄진다. 되돌리기 비용이 피처 하나를 넣고 빼는 것과 다르다.</p>
+    </div>
+
+    <h2>실행 전 노트북을 머지할 수 있게 게이트를 등록제로 바꿨다</h2>
+    <p>기존 <code>check_notebook_integrity.py</code>는 <code>missing_execution != 0</code>이면 무조건
+    실패라 실행 전 노트북을 머지할 수 없었다. 게이트를 없애면 설계서 06 7절의 자가 점검이 사라지므로
+    <strong>명시적 등록제</strong>로 바꿨다.</p>
+    <ul>
+      <li>새 파일 <code>notebooks/pending_execution.txt</code> — <code>파일명 # 이유</code> 한 줄씩.
+        등록된 노트북만 실행 출력 검사를 면제받고, 나머지 검사는 실행 전에도 전부 유효하므로 그대로 적용된다</li>
+      <li><strong>양방향 검사다.</strong> 등록된 노트북이 이미 실행돼 있으면(<code>missing_execution == 0</code>)
+        그것도 실패로 낸다 — 목록이 조용히 낡는 것을 막는다. 실행 후 그 줄을 지우는 것이 "실행 완료" 신호다</li>
+      <li>없는 노트북이 등록돼 있어도 실패한다. 출력에 <code>실행 대기</code> 표시를 달아 통과가
+        "출력이 있다"는 뜻으로 오해되지 않게 했다</li>
+    </ul>
+
+    <h2>같이 들어간 코드</h2>
+    <ul>
+      <li><code>src/baram/calibration.py</code> — 후보 6종 레지스트리, 정규화 공간 채점,
+        <code>oracle_row_bound()</code>, <code>band_transition()</code>, <code>boundary_density()</code>,
+        <code>inner_oof_blocks()</code>. OOF 분할은 fold 정의와 같이 <strong>계약</strong>이며 시간 순서나
+        비겹침이 깨지면 <code>ValueError</code>로 멈춘다</li>
+      <li><code>src/baram/gbm.py</code> — <code>run_window_pooled(train_bounds=...)</code> 추가.
+        inner OOF가 임의 하위 구간으로 학습해야 하는데 그 구간들을 <code>TRAIN_WINDOWS</code>에 등록하면
+        fold 정의가 파생 구간으로 오염된다. 기본값이 <code>None</code>이라 기존 호출은 그대로다</li>
+      <li>같은 파일의 imputer에 <code>keep_empty_features=True</code>. 없으면 train 구간에서 전부 NaN인
+        피처 컬럼이 조용히 사라져 <strong>컬럼 수 불일치로 터진다.</strong> 등록된 창(6개월 이상)에서는
+        걸리지 않았지만 inner OOF는 3개월 구간까지 학습한다. 값이 바뀌는 경우는 없다</li>
+    </ul>
+
+    <h2>검증</h2>
+    <ul>
+      <li><strong>326 tests 통과</strong> (269 → 326, <code>test_calibration.py</code> 57건 추가)</li>
+      <li>노트북 무결성 <strong>17개 통과</strong> — 16번이 <code>실행 대기</code>로 표시된다.
+        등록제를 <strong>양방향으로 직접 확인</strong>했다: 16번을 목록에서 빼면
+        <code>missing_execution=21</code>로 실패, 이미 실행된 15번을 등록하면 "실행이 끝났는데 등록된 채로
+        남아 있다"로 실패</li>
+      <li><strong>노트북 21개 code 셀 전부를 합성 예측으로 실행</strong>했다. 학습·데이터 로드만 건너뛰고
+        분석·그림 셀을 순서대로 돌려 <strong>사용자의 30회 학습이 늦은 셀에서 터지지 않게</strong> 했다.
+        이 과정에서 실제 버그 하나를 잡았다 — <code>isotonic</code>의 transform이 평가 행 0개인 그룹
+        (<code>W_2022</code>의 Group 3)에서 빈 배열을 받아 sklearn이 예외를 던졌다.
+        <code>Calibration.__call__</code>에서 막고 여섯 후보 전부에 회귀 테스트를 걸었다</li>
+      <li><strong>그림 7종을 PNG로 저장해 실제로 열어 확인</strong>했고 두 종류의 문제를 고쳤다 —
+        U+2212 빼기 기호가 Malgun Gothic에 없어 <code>lgbm_pooled □ rf_spatial</code>처럼 두부로 렌더링된 것,
+        범례·주석이 막대를 덮거나 막대가 축에서 잘린 것(그림 2·4·5·6). 오라클 상한이 후보 Δ보다 한 자릿수
+        커서 같은 막대로 그리면 비교 대상이 눌리는 문제도 선·주석으로 바꿨다</li>
+      <li>markdown에는 <strong>판정 문장을 쓰지 않았다.</strong> 결론 표와 채택 판정은 전부 코드가 낸다 —
+        노트북 15에서 markdown 주장이 출력과 어긋난 사례(F7 3그룹 점수의 대소 방향)가 있었기 때문이다</li>
+    </ul>
+
+    <h2>한계</h2>
+    <ul>
+      <li><strong>아직 실행하지 않았다.</strong> 이 로그에는 점수가 하나도 없다</li>
+      <li>inner 모델은 최종 모델보다 학습 데이터가 적어 오차 분포가 더 넓다. 그 분포에 맞춘 보정은
+        최종 모델에 조금 과교정이며, 8절 민감도로 <strong>크기는 재되 없앨 수는 없다</strong></li>
+      <li>좌표 상승법인 <code>binned_metric</code>은 전역 최적을 보장하지 않는다. 보장하려면 그리드가
+        <code>121<sup>5</sup></code>가 되어 후보 수를 누르자는 취지에 어긋난다</li>
+      <li>fold 아홉 개는 서로 독립이 아니다(노트북 14 7-4절과 동일)</li>
+      <li><code>PINNED_COMMIT</code>이 아직 <code>None</code>이다. 이 노트북이 머지되는 커밋을 미리 알 수 없어
+        기본 브랜치 SHA를 보고하게 했고, 실행 결과를 반영하는 후속 PR에서 <strong>그 실행이 실제로 쓴 SHA</strong>로
+        채운다. 노트북 15는 삭제된 브랜치 커밋을 박아 두어 Colab에서 도달하지 못했다</li>
+    </ul>
+
+    <h2>다음</h2>
+    <ul>
+      <li><strong>사용자가 노트북 16을 로컬에서 실행한다</strong> —
+        <code>python scripts/run_notebook_live.py notebooks/16_metric_aware_calibration_lab.ipynb -o notebooks/16_metric_aware_calibration_lab.ipynb</code>.
+        실행 중 볼 것: 2절 F0 재현 게이트 <code>통과 : True</code>, 3절 FICR 기여율, 5절 오라클 상한이
+        문턱을 넘는지, 6절 판정 열, 8절 민감도 일치</li>
+      <li>결과를 받으면 후속 PR에서 <code>pending_execution.txt</code>의 16번 줄 삭제,
+        <code>PINNED_COMMIT</code> 확정, 10절 산문과 Decision Box ㉙ 채택 결과,
+        설계서 04·06 버전 bump를 함께 처리한다</li>
+      <li>보정이 채택되면 남은 후보는 M4(P1 물리·공간 피처)와 M5(fold OOF 앙상블)다.
+        채택되지 않으면 <strong>9절의 세 층 비교가 다음 방향을 가른다</strong> — 상한 자체가 낮았다면
+        정산 구간을 겨냥하는 방향에 남은 것이 없다는 뜻이고, 상한은 높은데 후보가 못 가져왔다면
+        함수 형태를 넓히는 것이 다음 후보가 된다</li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>
