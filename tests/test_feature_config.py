@@ -35,10 +35,11 @@ class TestPresetContract:
       "spatial_nearest_own_group",
     ]
 
-  def test_official_mean은_공식_baseline_전처리와_같다(self):
+  def test_official_mean은_legacy_production_전처리와_같다(self):
+    # legacy baseline.aggregate_weather는 lead feature를 항상 붙인다.
     config = get_feature_set("official_mean")
     assert config.statistics == ("mean",)
-    assert config.include_lead is False
+    assert config.include_lead is True
     assert config.wind_vector is False
     assert config.spatial is None
     assert config.calendar is True

@@ -138,7 +138,10 @@ class ResolvedFeatureSet:
 
 
 FEATURE_SETS = {
-  "official_mean": FeatureSetConfig(name="official_mean"),
+  # `baram.baseline`의 legacy 경로는 lead feature를 항상 붙이므로 include_lead=True다.
+  # 노트북 06~08의 통제군은 lead를 뺀 74개였는데, 여기서는 "승격 전 production과
+  # 동일"이 기본값의 계약이므로 production 쪽을 따른다.
+  "official_mean": FeatureSetConfig(name="official_mean", include_lead=True),
   "expanded_vector": FeatureSetConfig(
     name="expanded_vector",
     statistics=SPATIAL_STATISTICS,
