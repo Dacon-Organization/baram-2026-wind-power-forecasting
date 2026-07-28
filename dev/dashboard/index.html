@@ -90,6 +90,11 @@
 
   <h2>작업 로그</h2>
   <div class="cards">
+    <a class="card" href="log/2026-07-28-baram-colab-bootstrap-abi-guard.html">
+      <div class="date">2026-07-28 (KST) · 노트북 16 셀 0 · Colab 실행 준비</div>
+      <div class="title">Colab 부트스트랩 — 진단 코드가 진단 대상에 걸렸다</div>
+      <div class="summary">노트북 16의 첫 Colab 실행이 버전 점검에서 <code>ValueError: numpy.dtype size changed</code>로 죽었다. Colab 런타임은 <strong>첫 셀이 돌기 전에 numpy 2.0.2를 이미 import해 둔다</strong> — 거기에 고정본 1.26.4를 깔면 디스크와 메모리의 numpy가 갈리고, 확장 모듈을 새로 부르는 순간 ABI 오류가 난다. <strong>이 상태 자체는 부트스트랩이 예상하고 있었고</strong> "런타임 재시작" 안내까지 준비돼 있었다. 문제는 그 안내를 내기 위한 <code>reportVersions()</code>가 네 패키지를 <code>import_module()</code>로 전부 새로 불렀다는 것 — <strong>진단이 진단 대상에 걸려 안내에 닿지 못했다.</strong> 점검을 import 없이 하도록 바꿨다: 이미 <code>sys.modules</code>에 있으면 조회로(<strong>로드됨</strong>), 아니면 dist metadata로(<strong>설치본</strong>) 본다. 로컬은 종전대로 import한다 — 이 개발 환경은 dist-info가 실제와 어긋나 있어(<code>pandas</code> metadata 2.2.2 / 실제 3.0.3, <code>scikit-learn</code> 1.5.1 / 1.9.0) metadata를 믿을 수 없다. 안내도 출처별로 갈랐다 — <strong>로드됨 드리프트는 재시작으로 풀리지만 설치본 드리프트는 풀리지 않으므로</strong> <code>--force-reinstall</code> 명령을 만들어 찍는다. <code>except ImportError</code>도 <code>except Exception</code>으로 넓혔다(ABI 오류는 <code>ValueError</code>다). 네 경우(로컬·Colab 첫 실행·재시작 후·설치 어긋남)를 모두 돌려 확인 · 326 tests · 노트북 무결성 17개 통과. <code>requirements-ci.txt</code> 설치는 <strong>일부러 돌리지 않았다</strong> — CI 고정본(pandas 2.2.2·sklearn 1.5.1)을 깔면 노트북 15의 기준값을 낸 로컬 환경을 덮어쓴다.</div>
+    </a>
     <a class="card" href="log/2026-07-27-baram-metric-aware-calibration.html">
       <div class="date">2026-07-27 (KST) · 노트북 16 (실행 대기) · <code>src/baram/calibration.py</code> · 설계서 04·06</div>
       <div class="title">metric-aware calibration 착수 — 채택 조건을 결과 이전에 등록했다</div>
