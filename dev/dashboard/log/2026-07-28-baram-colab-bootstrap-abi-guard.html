@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BARAM Colab 부트스트랩 ABI 가드 작업 로그</title>
+<style>
+  :root { --bg:#0f1115; --card:#1a1d24; --border:#2a2f3a; --text:#e6e9ef; --muted:#8b93a7; --done:#3fb950; --warn:#d29922; --accent:#58a6ff; --bad:#f85149; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--text); line-height:1.65; }
+  .wrap { max-width:960px; margin:0 auto; padding:36px 20px 64px; }
+  a { color:var(--accent); }
+  h1 { margin:0 0 6px; font-size:1.7rem; }
+  h2 { color:var(--accent); font-size:1.08rem; margin-top:30px; }
+  .sub { color:var(--muted); margin-bottom:24px; }
+  .panel { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px 22px; }
+  .decision { border-left:4px solid var(--done); background:rgba(63,185,80,.08); padding:12px 16px; border-radius:6px; margin:12px 0; }
+  .warn { border-left:4px solid var(--warn); background:rgba(210,153,34,.08); padding:12px 16px; border-radius:6px; margin:12px 0; }
+  .bad { border-left:4px solid var(--bad); background:rgba(248,81,73,.08); padding:12px 16px; border-radius:6px; margin:12px 0; }
+  .scroll { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; margin:10px 0 18px; font-size:.9rem; }
+  th,td { border:1px solid var(--border); padding:8px 10px; text-align:left; }
+  th { background:#11151c; color:#c9d1d9; }
+  li { margin:6px 0; }
+  code { background:#0b0d11; padding:1px 6px; border-radius:4px; }
+  pre { background:#0b0d11; border:1px solid var(--border); border-radius:8px; padding:12px 14px; overflow-x:auto; font-size:.85rem; }
+  .num { font-variant-numeric:tabular-nums; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Colab 부트스트랩 — 진단 코드가 진단 대상에 걸렸다</h1>
+  <div class="sub">2026-07-28 KST · 노트북 16 셀 0 · 브랜치 <code>fix/mygithub05253-colab-bootstrap-abi-guard</code></div>
+
+  <div class="panel">
+    <h2>무엇이 났나</h2>
+    <p>노트북 16을 Colab에서 처음 돌렸다. clone·Drive 마운트·데이터 4종 확인까지 전부 지나간 뒤
+    <strong>버전 점검에서 죽었다.</strong></p>
+    <pre>  BAD  numpy          2.0.2  (기대 1.26.4)
+ValueError: numpy.dtype size changed, may indicate binary incompatibility.
+            Expected 96 from C header, got 88 from PyObject
+  ... /usr/local/lib/python3.12/dist-packages/numpy/random/_pickle.py
+      → numpy/random/mtrand.pyx in init numpy.random.mtrand()</pre>
+
+    <h2>원인 — 상태는 예상했고, 안내에 닿지 못했다</h2>
+    <p>Colab 런타임은 <strong>첫 셀이 돌기 전에 이미 numpy 2.0.2를 import해 둔다.</strong>
+    거기에 pip로 1.26.4를 깔면 <strong>디스크와 메모리의 numpy가 갈린다</strong> —
+    확장 모듈을 하나라도 새로 부르는 순간 위 ABI 오류가 난다.
+    <code>mtrand</code>는 numpy 1.26.4 것(C header 96)이고 메모리에 올라간 dtype은 numpy 2.0.2 것(88)이다.</p>
+
+    <div class="bad">
+      <p style="margin:0">이 상태 자체는 부트스트랩이 <strong>이미 예상하고 있었다</strong> —
+      "런타임 &gt; 세션 다시 시작" 안내와 <code>RuntimeError</code>가 준비돼 있었다.
+      문제는 그 안내를 내기 위한 점검 <code>reportVersions()</code>가
+      <strong><code>importlib.import_module()</code>로 네 패키지를 전부 새로 불렀다</strong>는 것이다.
+      pandas를 부르는 순간 numpy 확장 모듈이 로드되며 죽었고,
+      <strong>정작 출력해야 할 안내에 닿지 못했다.</strong></p>
+    </div>
+
+    <h2>고친 것 — 점검은 import 없이 한다</h2>
+    <p><code>reportVersions(allowImport)</code>로 바꿨다. 버전 출처를 둘로 나누고 출력에 함께 찍는다.</p>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>경로</th><th>출처</th><th>왜</th></tr></thead>
+      <tbody>
+        <tr><td>이미 <code>sys.modules</code>에 있음</td><td><strong>로드됨</strong></td><td>새 import가 아니라 조회다. 결과를 좌우하는 것은 이 버전이다</td></tr>
+        <tr><td>Colab · 설치 직후</td><td><strong>설치본</strong> (dist metadata)</td><td>여기서 import하면 ABI 오류로 죽어 안내가 사라진다</td></tr>
+        <tr><td>로컬</td><td><strong>로드됨</strong> (import 허용)</td><td>버전을 갈아끼우지 않아 안전하고, 이 환경은 metadata가 부정확하다(아래)</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="warn">
+      <p style="margin:0"><strong>로컬에서 metadata를 믿으면 안 되는 이유.</strong>
+      이 개발 환경의 dist-info는 실제 설치본과 어긋나 있다 —
+      <code>pandas-2.2.2.dist-info</code>가 남아 있는데 import되는 것은 <strong>3.0.3</strong>이고,
+      <code>scikit-learn</code>은 metadata <strong>1.5.1</strong> / 실제 <strong>1.9.0</strong>이다.
+      그래서 로컬 경로는 종전대로 import해서 본다.</p>
+    </div>
+
+    <p>안내도 드리프트 <strong>출처별로 갈랐다</strong>. 재시작으로 풀리는 것과 아닌 것은 다른 문제다.</p>
+    <ul>
+      <li><strong>로드됨 드리프트</strong> → 런타임 재시작 안내 (디스크는 이미 고정본이다)</li>
+      <li><strong>설치본 드리프트</strong> → 재시작해도 안 풀린다. <code>pip install --force-reinstall</code> 명령을 만들어 찍는다</li>
+      <li><code>loadedVersion</code>의 <code>except ImportError</code> → <code>except Exception</code>.
+        ABI 오류는 <code>ValueError</code>라 종전 코드는 잡지 못했다</li>
+    </ul>
+
+    <h2>검증</h2>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>경우</th><th>메모리</th><th>디스크</th><th>결과</th></tr></thead>
+      <tbody>
+        <tr><td>로컬 (셀 전체 실행)</td><td>import</td><td>—</td><td><strong>4종 전부 OK</strong>, 종전과 같은 출력</td></tr>
+        <tr><td>Colab 첫 실행</td><td>numpy 2.0.2</td><td>1.26.4</td><td><strong>재시작 안내</strong> — 죽지 않는다</td></tr>
+        <tr><td>Colab 재시작 후</td><td>numpy 1.26.4</td><td>1.26.4</td><td><strong>통과</strong></td></tr>
+        <tr><td>설치가 어긋난 경우</td><td>numpy 1.26.4</td><td>pandas 2.2.2</td><td><strong>재설치 안내</strong></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <ul>
+      <li><strong>326 tests 통과</strong></li>
+      <li>노트북 무결성 <strong>17개 통과</strong> (16은 실행 대기 등록 유지)</li>
+      <li><code>requirements-ci.txt</code> 설치는 <strong>돌리지 않았다</strong> — CI는 pandas 2.2.2·sklearn 1.5.1을 고정하는데,
+        이 로컬 환경은 노트북 15의 기준값을 낸 pandas 3.0.3·sklearn 1.9.0이다. 설치하면 <strong>재현 기준 환경을 덮어쓴다</strong></li>
+    </ul>
+
+    <h2>남은 위험</h2>
+    <div class="warn">
+      <p style="margin:0">재시작 뒤 <strong>pandas 3.0.3 리눅스 휠이 numpy 1.26.4에서 import되는지는 Colab에서만 확인된다.</strong>
+      같은 조합이 로컬(Windows·py3.12)에서 노트북 15를 33분 돌렸으므로 조합 자체는 성립한다.
+      실패하면 셀 1이 아니라 <strong>셀 3의 <code>import pandas</code>에서</strong> 드러난다.</p>
+    </div>
+
+    <h2>손대지 않은 것</h2>
+    <ul>
+      <li><strong>노트북 15의 같은 코드</strong> — 실행 출력이 이미 있는 노트북의 소스를 고치면 소스와 출력이 갈린다.
+        15의 Colab 경로는 한 번도 실행된 적이 없다(고정 커밋이 삭제된 브랜치를 가리켜 도달하지 못했다)</li>
+      <li><strong><code>PINNED_COMMIT</code></strong> — 여전히 <code>None</code>이다.
+        이번 실행이 보고한 SHA는 <code>982a815</code>이며, <strong>실제 실행이 끝난 뒤</strong> 그 SHA로 채우는 것이 설계 의도다</li>
+      <li><strong>기존 clone 갱신</strong> — <code>/content/baram</code>이 있으면 pull하지 않는다.
+        이번 변경은 노트북 파일 안에만 있어 clone 상태와 무관하다</li>
+    </ul>
+
+    <h2>다음</h2>
+    <ul>
+      <li>Colab에서 <strong>런타임 &gt; 세션 다시 시작</strong> 후 셀 1 재실행 → 노트북 16 본 실행</li>
+      <li>실행이 끝나면 <code>pending_execution.txt</code>에서 16번 줄을 지우고 결과를 반영한다</li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>
